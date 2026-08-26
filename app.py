@@ -174,7 +174,7 @@ except Exception:
 all_docs = docs + website_docs + build_documents_from_bio(portfolio_github_links)
 
 retriever = BM25Retriever.from_documents(all_docs)
-retriever.k = 3  # increased from 1 → 3 for richer context retrieval
+retriever.k = 5  # Retrieve top-5 chunks for richer, more complete context per query
 
 
 # ─── LLM ─────────────────────────────────────────────────────
@@ -202,13 +202,8 @@ if not api_key:
 #    the clean_reply() fallback fix below still protects you.
 llm = ChatGroq(
     model="qwen/qwen3.6-27b",
-    temperature=0.6,
+    temperature=0.5,   # slightly lower for better factual accuracy on personal domain
     max_tokens=1800,
-    # NOTE: Some langchain-groq versions validate these as top-level
-    # parameters (not inside `model_kwargs`). To keep deployment stable
-    # across environments, we avoid passing them via `model_kwargs`.
-    # If your Groq/langchain version supports disabling reasoning,
-    # you can re-add these as top-level args.
 )
 
 
@@ -219,16 +214,28 @@ def normalize_text(text: str) -> str:
         r"\bu\b": "you",
         r"\bur\b": "your",
         r"\br\b": "are",
+        r"\bd\b": "do",
+        r"\bda\b": "the",
         r"\bwat\b": "what",
         r"\bwats\b": "what is",
         r"\bwhat's\b": "what is",
+        r"\bwat abt\b": "what about",
+        r"\bhw\b": "how",
+        r"\bhw abt\b": "how about",
         r"\babt\b": "about",
         r"\bplz\b": "please",
         r"\bpls\b": "please",
+        r"\bgimme\b": "give me",
+        r"\bwanna\b": "want to",
+        r"\bgonna\b": "going to",
+        r"\bdunno\b": "don't know",
+        r"\bkinda\b": "kind of",
         r"\bshs\b": "senior high school",
         r"\bjhs\b": "junior high school",
         r"\benginerring\b": "engineering",
         r"\btoothen\b": "too",
+        r"\btelll\b": "tell",
+        r"\btell me more\b": "tell me more details",
     }
     for pattern, replacement in replacements.items():
         t = re.sub(pattern, replacement, t)
@@ -237,9 +244,9 @@ def normalize_text(text: str) -> str:
 
 # ─── Intent Detection ────────────────────────────────────────
 INTENT_MAP = {
-    "introduction": ["introduce", "who are you", "tell me about yourself", "your name", "what do you do", "hey"],
+    "introduction": ["introduce", "who are you", "tell me about yourself", "your name", "what do you do"],
     "skills": ["skills", "experience", "work", "job", "internship", "design", "coding", "programming", "stack", "technologies", "software engineer", "software engineering", "developer", "full stack", "backend", "frontend", "ai engineer", "machine learning"],
-    "projects": ["project", "projects", "portfolio", "built", "system", "platform", "app"],
+    "projects": ["project", "projects", "portfolio", "built", "system", "platform", "app", "whatsapp assistant", "skin disease", "nlp", "tweeteval"],
     "origin": ["where are you from", "where are u from", "where r u from", "where do you live", "where do u live", "location", "country", "based", "ghana", "accra", "newtown", "accra newtown", "hometown", "where did you grow up", "childhood", "from where", "where u from"],
     "education": [
         "studying",
@@ -250,7 +257,7 @@ INTENT_MAP = {
         "degree",
         "major",
         "education",
-        "background",
+        "academic",
         "studies",
         "shs",
         "jhs",
@@ -260,9 +267,20 @@ INTENT_MAP = {
         "courses",
         "senior high school",
         "junior high school",
+        "legon",
+        "achimota",
+        "edwinase",
+        "bece",
+        "graduated",
+        "graduate",
+        "gpa",
+        "year",
     ],
-    "hobbies": ["hobbies", "free time", "leisure", "outside school", "football", "music"],
-    "goals": ["goal", "goals", "dream", "ambition", "vision", "future"],
+    "hobbies": ["hobbies", "hobby", "free time", "leisure", "outside school", "football", "music", "fun", "relax", "pastime"],
+    "goals": ["goal", "goals", "dream", "ambition", "vision", "future", "plan", "aspiration", "next steps"],
+    "contact": ["contact", "reach", "email", "phone", "whatsapp", "call", "hire", "available", "freelance", "availability", "collaborate"],
+    "certifications": ["certif", "certificate", "certified", "badge", "credential", "aws", "udemy", "credly"],
+    "research": ["research", "paper", "publication", "multimodal", "responsible ai", "agentic", "rag"],
     "general": [],
 }
 
@@ -275,36 +293,44 @@ GREETING_NO_QUESTION_RE = re.compile(r"^(hey|hi|hello|howdy)\b[\s!?.]*$", re.IGN
 
 
 INTENT_FOCUS = {
-    "introduction": "Introduce yourself in a warm, natural way. If you have already introduced yourself in this conversation, keep it brief and ask what the user would like to discuss next.",
-    "skills": "Talk about your software engineering, full-stack, or AI engineering skills. If you already listed your stack, discuss how you apply these skills in real projects or mention specific frameworks/libraries.",
-    "projects": "Highlight specific projects (like the AI WhatsApp assistant or African skin disease detection). Focus on the specific technologies or architecture of the project.",
-    "origin": "Confirm your location in Accra Newtown, Ghana. If you have already mentioned Accra in this conversation, do not repeat the same phrases—instead briefly mention working/studying from Accra Newtown or ask what they want to explore next.",
-    "education": "Mention specific institutions based on what was asked. For JHS, mention Edwinase Ejisu Basic School and passing BECE as overall best student in Kumasi in 2020. For SHS, mention Achimota School (General Arts, 2021-2023). For university, mention University of Ghana Legon, Computer Science / AI & ML. If already mentioned, share new details not yet discussed.",
-    "hobbies": "Talk about your hobbies (football, music, exploring AI papers) briefly.",
-    "goals": "Discuss your vision and ambition to build world-class AI solutions for Africa and beyond.",
-    # For greetings and general questions, avoid long self-intros.
-    "general": "Answer the message directly, very briefly (1–2 sentences). If it's a greeting, acknowledge and ask what they want to know next.",
+    "introduction": "Introduce yourself warmly and naturally as Christian Agyapong (Chrix Tech). If you've already introduced yourself, skip the intro and ask what they'd like to explore.",
+    "skills": "Talk about your software engineering, full-stack, or AI engineering skills specifically. If you already listed your tech stack, now describe how you apply these skills in actual projects or what you're strongest at.",
+    "projects": "Share details about specific projects. Highlight what problem it solved, the technologies used, and any interesting technical challenge. Be proud and specific.",
+    "origin": "Confirm you're based in Accra Newtown, Ghana. If already mentioned, add context about what it's like building tech from Ghana or what drives you from here.",
+    "education": "Answer based on the specific level asked: JHS (Edwinase Ejisu Basic School, BECE best student 2020), SHS (Achimota, General Arts 2021-2023), University (UG Legon, CS/AI&ML, graduating 2027). If already mentioned, share coursework or what you found most challenging.",
+    "hobbies": "Talk naturally about your hobbies: football (soccer), music when coding, reading AI research papers, and thinking about how Africa can use tech to leapfrog development.",
+    "goals": "Share your vision passionately: building AI that makes measurable impact in healthcare and education across Africa, becoming a researcher, and proving world-class AI can be built from Africa.",
+    "contact": "Share contact details naturally: email christianagyapong2023@email.com, phone/WhatsApp +233557618362. Mention you're open to contracts, freelance, research collaboration.",
+    "certifications": "List certifications with their full verification links: AWS Cloud 101, Deep Learning for Computer Vision (Applied AI Lab), Data Intelligence & Swarm Analytics Lab, and Udemy Prompt Engineering.",
+    "research": "Discuss research interests: multimodal AI, educational AI, healthcare AI for Africa, LLMs, agentic AI, RAG, responsible AI, and human-AI interaction.",
+    "general": "Answer the message directly and conversationally in 1-2 sentences. If it's a greeting, be warm and ask what they want to explore.",
 }
 
 INTENT_FALLBACKS = {
     "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
-    "education": "My education went from Edwinase Ejisu Basic School (JHS) where I passed BECE as overall best student in Kumasi, then Achimota School for SHS (General Arts, 2021–2023), and now I'm at the University of Ghana, Legon, studying Computer Science with a focus on AI & Machine Learning.",
+    "education": "My education went from Edwinase Ejisu Basic School (JHS) where I passed BECE as overall best student in Kumasi, to Achimota School for SHS (General Arts, 2021–2023), and now I'm at the University of Ghana, Legon, studying Computer Science with a focus on AI & Machine Learning.",
     "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
-    "projects": "I've built several projects including an AI WhatsApp Business Assistant, an African Skin Disease Detection System, and NLP moderation models.",
-    "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana.",
-    "hobbies": "Outside of coding, I love playing football, listening to music, and reading about emerging AI research.",
-    "goals": "My goal is to build impactful AI systems that improve healthcare and education across Africa.",
+    "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), and a TweetEval NLP classifier.",
+    "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana, currently studying Computer Science at UG Legon.",
+    "hobbies": "Outside of coding, I love playing football, listening to music, and reading emerging AI research papers.",
+    "goals": "My goal is to build impactful AI systems that improve healthcare and education across Africa—and contribute to a world where world-class AI is built in Africa, for Africa and the world.",
+    "contact": "You can reach me at christianagyapong2023@email.com or WhatsApp +233557618362. I'm open to AI engineering contracts, freelance, and research collaborations.",
+    "certifications": "I hold certifications in AWS Cloud 101, Deep Learning for Computer Vision, Data Intelligence & Swarm Analytics, and Prompt Engineering (Udemy).",
+    "research": "My research interests include multimodal AI, healthcare AI (especially for African patients), educational AI, LLMs, agentic AI systems, RAG, and responsible AI.",
     "general": "I'm happy to tell you more about my projects, tech stack, education, or freelance availability—what would you like to explore?",
 }
 
 INTENT_SUGGESTIONS = {
     "introduction": ["What projects have you built?", "What is your tech stack?", "What are your goals?"],
-    "skills": ["Tell me about your experience", "What tools do you use most?", "Can you build something for me?"],
-    "projects": ["How does your project work?", "What stack did you use?", "What was the hardest part?"],
-    "origin": ["How did your journey start?", "Where are you based now?", "What motivates you?"],
-    "education": ["What are you studying right now?", "What excites you most about AI/ML?", "What have you learned?"],
-    "hobbies": ["What music do you like?", "What do you do to relax?", "Do you play football?"],
+    "skills": ["Tell me about your AI projects", "What frameworks do you use most?", "Can you build something for me?"],
+    "projects": ["How does the RAG system work?", "What stack did you use?", "What was the hardest technical challenge?"],
+    "origin": ["What's it like building tech in Ghana?", "Where are you based now?", "What motivates you?"],
+    "education": ["What are you studying right now?", "What excites you most about AI/ML?", "When do you graduate?"],
+    "hobbies": ["What music do you like?", "Which football team do you follow?", "Do you read AI papers?"],
     "goals": ["What are you building next?", "How do you plan to impact Africa?", "What's your long-term vision?"],
+    "contact": ["Are you available now?", "What type of projects do you take?", "What's your LinkedIn?"],
+    "certifications": ["What's your AWS certification?", "Which AI certifications do you have?", "Where can I verify them?"],
+    "research": ["What's your research focus?", "Have you published papers?", "What is RAG?"],
     "general": ["What projects are you working on?", "What's your core tech stack?", "Are you available for freelance?"],
 }
 
@@ -336,7 +362,6 @@ BAD_OPENERS = [
     r"^Yes,? I can[,!]?\s*",
     r"^Yes,? I can definitely[,!]?\s*",
     r"^I can definitely[,!]?\s*",
-    r"^I can[,!]?\s*",
     r"^Hey there[,!]?\s*",
     r"^Great[,!]?\s*",
     r"^I'm listening[,!]?\s*",
@@ -467,12 +492,14 @@ def clean_reply(text: str) -> str:
     if text and text[0].islower():
         text = text[0].upper() + text[1:]
 
-    # 5) Enforce sentence limit (improves responsiveness)
+    # 5) Enforce sentence limit — education/skills get 5, others get 4
     sentences = re.split(r"(?<=[.!?])\s+", text)
     sentences = [s.strip() for s in sentences if s and s.strip()]
 
+    _max_sentences = 5 if any(w in text.lower() for w in ["edwinase", "achimota", "university", "legon", "bece", "whatsapp", "medgemma", "tweeteval"]) else 4
+
     if sentences:
-        text = " ".join(sentences[:4]).strip()
+        text = " ".join(sentences[:_max_sentences]).strip()
 
     # Light humanization pass for very short, template-like replies.
     text = humanize_reply(text)
@@ -498,24 +525,41 @@ def format_history(history):
     if not history:
         return "(No prior conversation)"
     lines = []
-    for human_msg, ai_msg in history[-4:]:
+    # Use up to the last 6 turns (more context for follow-up inference)
+    for human_msg, ai_msg in history[-6:]:
         lines.append(f"Person: {human_msg}")
         lines.append(f"Chrix: {ai_msg}")
     return "\n".join(lines)
+
+
+def _extract_last_topic(chat_history) -> str:
+    """Infer the most recent topic from history for follow-up handling."""
+    if not chat_history:
+        return ""
+    last_human = ""
+    last_ai = ""
+    for pair in reversed(chat_history):
+        if isinstance(pair, (list, tuple)) and len(pair) >= 2:
+            last_human = (pair[0] or "").strip()
+            last_ai = (pair[1] or "").strip()
+            break
+    # First sentence of last AI reply captures the topic well
+    first_sentence = re.split(r"(?<=[.!?])\s+", last_ai)[0] if last_ai else ""
+    return f"The previous topic was: {first_sentence}" if first_sentence else ""
 
 
 def detect_intent(question: str) -> str:
     q = normalize_text(question)
 
     # Greeting-only should NOT trigger the full introduction every time.
-    if GREETING_NO_QUESTION_RE.match(q):
+    if GREETING_NO_QUESTION_RE.match(question.strip()):
         return "general"
 
-    # “Hey/Hi” with no explicit request is still greeting, not an intro request.
-    if GREETING_ONLY_RE.match(q):
+    # "Hey/Hi" with no explicit request is still greeting, not an intro request.
+    if GREETING_ONLY_RE.match(question.strip()) and len(question.strip().split()) <= 2:
         return "general"
+
     for intent, keywords in INTENT_MAP.items():
-
         if intent == "general":
             continue
         if any(kw in q for kw in keywords):
@@ -524,23 +568,35 @@ def detect_intent(question: str) -> str:
 
 
 SYSTEM_INSTRUCTIONS = (
-    "You are Christian Agyapong (Chrix Tech), a friendly and professional software engineer and AI student based in Accra Newtown, Ghana. "
-    "Answer only the CURRENT message directly, naturally, and concisely (1-3 sentences) in clear, professional English. "
-    "Use first person ('I', 'my', 'me') naturally. "
-    
-    "CRITICAL ANTI-REPETITION RULES: "
-    "- Review the RECENT CONVERSATION HISTORY carefully before answering. "
-    "- NEVER repeat the same sentences, phrases, or canned elevator pitches that you have already used in previous turns. "
-    "- If the user repeats a question, confirms information you just gave, or asks a related follow-up, do NOT re-deliver your earlier response. Instead, acknowledge it briefly with completely new words, elaborate on a fresh detail, or transition forward. "
-    "- Avoid repetitive boilerplate endings like 'Let me know if you’d like to explore...' on every single turn. "
-    
-    "PERSONA GUIDELINES: "
-    "- Smoothly weave your experiences into conversation like a human engineer, not a robot reading from a database. "
-    "- If you don't know something or it's not in your context, politely say so. Do not invent experiences. "
-    "- If asked about early education (JHS or SHS), share the details (e.g. Achimota School or Edwinase). Do not invent privacy restrictions. "
-    "- Never emit reasoning blocks (e.g., <think>...</think>) in your output. "
-    "- Do not use overly casual slang (chale, herh, abeg, e be so, naa, mehn, we dey push, etc.). "
-    "- If the user greets (hey/hi) without a question, give a warm, brief greeting and ask what they want to explore."
+    "You are Christian Agyapong, known professionally as Chrix Tech. You are a friendly, confident AI engineer, "
+    "full-stack developer, and Computer Science student at the University of Ghana, Legon, based in Accra Newtown, Ghana. "
+    "You answer questions about yourself directly, naturally, and conversationally in 1-4 sentences. "
+    "Use first person ('I', 'my', 'me') at all times. "
+
+    "ANTI-REPETITION (CRITICAL): "
+    "Read the RECENT CONVERSATION HISTORY before every reply. "
+    "NEVER reproduce sentences, phrases, or structures from your previous replies. "
+    "If the user follows up on a topic you already addressed (e.g., 'ur current location accra then', 'tell me more'), "
+    "acknowledge briefly in new words and add a fresh, specific detail you haven't shared yet. "
+    "Vary your sentence openings—don't start three replies in a row with 'I'm based in...' or 'I'm currently...'. "
+
+    "FOLLOW-UP INTELLIGENCE: "
+    "If the message is vague (e.g., 'tell me more', 'and then?', 'what else?'), infer what topic from the conversation history "
+    "and expand on it with a NEW detail. Don't ask for clarification—infer and answer. "
+
+    "PERSONALITY DEPTH: "
+    "You are proud of your journey—from passing BECE as the overall best student in Kumasi at Edwinase Ejisu Basic School, "
+    "to Achimota School, to now pursuing AI engineering at UG Legon. "
+    "You are passionate about building AI that is equitable and impactful across Africa, especially in healthcare and education. "
+    "You find genuine joy in bridging research and real products. "
+    "You love football, music while coding, and reading AI papers. "
+
+    "STYLE: "
+    "Professional but human—like a smart engineer sharing their story over coffee. "
+    "No slang: avoid chale, herh, abeg, naa, mehn, vibe, what's popping. "
+    "No hollow endings like 'Let me know if you want to explore more' on every reply. "
+    "If asked for certificates/links, give the exact URLs from your profile. "
+    "Never emit reasoning blocks like <think>...</think>. "
 )
 
 
@@ -576,10 +632,19 @@ def build_persona_response(user_question: str, chat_history):
     focus = INTENT_FOCUS.get(intent, INTENT_FOCUS["general"])
 
     last_ai = _last_ai_reply(chat_history)
+    last_topic = _extract_last_topic(chat_history)
+
+    # Detect follow-up phrasing — user is continuing a previous topic
+    q_norm = normalize_text(user_question)
+    FOLLOW_UP_RE = re.compile(
+        r"^(tell me more|more details|elaborate|go on|and then|what else|continue|and|also|okay|ok|great|nice|got it|interesting|really|cool|wow|noted|alright|right)\.?\s*$",
+        re.IGNORECASE
+    )
+    is_follow_up = bool(FOLLOW_UP_RE.match(user_question.strip()))
 
     # If user is just greeting (e.g., "hey"), force a short, non-repetitive reply.
     q = user_question.strip().lower()
-    if GREETING_NO_QUESTION_RE.match(q) or GREETING_ONLY_RE.match(q):
+    if GREETING_NO_QUESTION_RE.match(user_question.strip()) or (GREETING_ONLY_RE.match(user_question.strip()) and len(user_question.strip().split()) <= 2):
         greeting_pool = [
             "Hey! What do you want to explore today—projects, skills, or availability?",
             "Hi—what are you curious about: AI work, my projects, or freelance?",
@@ -626,34 +691,44 @@ def build_persona_response(user_question: str, chat_history):
 
 
     # Help the retriever by biasing queries toward the right KB section.
-    # This improves precision for “experience” / “skills” style questions.
     query = user_question
-    q_norm = normalize_text(user_question)
     if any(k in q_norm for k in ["experience", "work", "company", "job", "intern", "software engineer", "software engineering", "developer", "full stack"]):
         query = f"professional experience software engineering full stack projects responsibilities {user_question}"
-    elif any(k in q_norm for k in ["skill", "skills", "tech stack", "technology", "tools", "programming", "languages"]):
-        query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
+    elif any(k in q_norm for k in ["skill", "skills", "tech stack", "technology", "tools", "programming", "languages", "framework"]):
+        query = f"technical skills programming languages frontend backend databases cloud AI frameworks {user_question}"
     elif any(k in q_norm for k in ["junior high school", "jhs", "basic school", "edwinase", "bece"]):
-        # JHS-specific bias: pull Edwinase Ejisu Basic School chunk directly
         query = f"Edwinase Ejisu Basic School JHS BECE best student Kumasi {user_question}"
-    elif any(k in q_norm for k in ["senior high school", "shs", "achimota", "high school", "secondary"]):
-        # SHS-specific bias
+    elif any(k in q_norm for k in ["senior high school", "shs", "achimota", "high school", "secondary", "general arts"]):
         query = f"Achimota School Senior High School General Arts SHS {user_question}"
-    elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses"]):
+    elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "legon", "graduated"]):
         query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
     elif any(k in q_norm for k in ["from", "where", "location", "live", "based", "ghana", "accra", "newtown", "origin", "hometown"]):
         query = f"location based living in Accra Newtown Ghana Christian Agyapong {user_question}"
+    elif any(k in q_norm for k in ["certif", "badge", "credential", "aws", "udemy", "credly"]):
+        query = f"certifications AWS Udemy Credly badges credentials {user_question}"
+    elif any(k in q_norm for k in ["research", "paper", "multimodal", "agentic", "responsible"]):
+        query = f"research interests multimodal healthcare educational AI RAG responsible AI {user_question}"
+    elif any(k in q_norm for k in ["contact", "reach", "email", "phone", "whatsapp", "hire", "freelance"]):
+        query = f"contact email phone WhatsApp availability freelance Christian Agyapong {user_question}"
     elif any(k in q_norm for k in ["portfolio", "github", "linkedin"]):
         query = f"portfolio github links {user_question}"
+    elif is_follow_up and last_topic:
+        # Follow-up: bias retrieval toward the last topic the AI discussed
+        query = f"{last_topic} {user_question}"
 
     relevant_docs = retriever.invoke(query)
     context = format_docs(relevant_docs)
     history_str = format_history(chat_history)
 
+    # Inject last topic context for follow-ups
+    follow_up_hint = ""
+    if is_follow_up and last_topic:
+        follow_up_hint = f"\nFOLLOW-UP CONTEXT: The user is continuing the previous topic. {last_topic}. Add a fresh, specific detail not yet mentioned.\n"
 
     human_text = (
         "FOCUS FOR THIS REPLY:\n"
-        f"{focus}\n\n"
+        f"{focus}\n"
+        f"{follow_up_hint}\n"
         "RELEVANT FACTS FROM YOUR LIFE:\n"
         f"{context}\n\n"
         "RECENT CONVERSATION HISTORY:\n"
