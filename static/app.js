@@ -205,10 +205,23 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Scroll to bottom whenever the virtual keyboard resizes the visual viewport
+    // Handle mobile keyboard appearance cleanly
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => scrollToBottom());
+        window.visualViewport.addEventListener('resize', () => {
+            scrollToBottom();
+        });
+        window.visualViewport.addEventListener('scroll', () => {
+            // Keep window anchored at top
+            if (window.scrollY !== 0) {
+                window.scrollTo(0, 0);
+            }
+        });
     }
+
+    // Scroll to bottom when focusing the input on mobile
+    messageInput.addEventListener('focus', () => {
+        setTimeout(scrollToBottom, 250);
+    });
 
     function updateSuggestions(newSuggestions) {
         const suggestionsContainer = document.getElementById('suggestions');

@@ -51,12 +51,25 @@ input, textarea, button { touch-action: manipulation; }
 /* ============================================================
    ROOT — lock the viewport, no page scroll ever
    ============================================================ */
-html, body {
+html {
+    width: 100%;
+    /* Use svh (small viewport) as the initial lock — it does NOT resize when
+       the mobile keyboard opens, unlike dvh/100vh. This is the key fix.
+       Falls back to 100% for browsers without svh support. */
+    height: 100svh;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: var(--bg-dark);
-    color: var(--text-primary);   /* #edf0ff — bright near-white */
+    color: var(--text-primary);
     font-family: 'Inter', system-ui, sans-serif;
 }
 
@@ -107,10 +120,7 @@ html, body {
 }
 
 /* ============================================================
-   CHAT WRAPPER
-   Uses absolute positioning for the three zones so the
-   layout is 100% explicit and cannot be disrupted by
-   content size changes.
+   CHAT WRAPPER — Pure Flexbox layout (robust on all screen sizes)
    ============================================================ */
 .chat-wrapper {
     /* Sizing */
@@ -118,6 +128,10 @@ html, body {
     z-index: 10;
     width:  min(900px, calc(100vw - 40px));
     height: min(820px, calc(100vh - 40px));
+
+    /* Flex column layout: header -> messages (scrolls) -> input */
+    display: flex;
+    flex-direction: column;
 
     /* Glass card styling */
     border-radius: var(--radius-panel);
@@ -144,11 +158,11 @@ html, body {
 }
 
 /* ============================================================
-   ZONE 1 — HEADER  (absolute, top of wrapper)
+   ZONE 1 — HEADER
    ============================================================ */
 .chat-header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
+    position: relative;
+    flex-shrink: 0;
     height: var(--header-h);
     z-index: 20;
 
@@ -249,13 +263,12 @@ html, body {
 }
 
 /* ============================================================
-   ZONE 2 — MESSAGES  (absolute, fills space between header & input)
+   ZONE 2 — MESSAGES (flex-grow scrolls between header & input)
    ============================================================ */
 .chat-messages {
-    position: absolute;
-    top: var(--header-h);
-    left: 0; right: 0;
-    bottom: var(--input-h);    /* stops exactly where input starts */
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
     z-index: 10;
 
     overflow-y: auto;
@@ -412,12 +425,11 @@ html, body {
 
 
 /* ============================================================
-   ZONE 3 — INPUT AREA  (absolute, pinned to bottom)
+   ZONE 3 — INPUT AREA
    ============================================================ */
 .chat-input-area {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: var(--input-h);
+    position: relative;
+    flex-shrink: 0;
     z-index: 20;
 
     display: flex;
@@ -469,11 +481,11 @@ html, body {
     display: flex;
     align-items: center;
     gap: 8px;
-    /* Use the alternate input background so the text bar reads slightly different */
     background: var(--bg-input-alt);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--radius-input);
     padding: 6px 6px 6px 18px;
+    position: relative;
     transition: border-color var(--transition), box-shadow var(--transition);
 }
 .glass-input:focus-within {
@@ -487,17 +499,18 @@ html, body {
     background: transparent;
     border: none;
     color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.92rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1rem; /* 16px to prevent iOS auto-zoom */
     outline: none;
     line-height: 1.5;
+    padding-right: 36px;
 }
 #message-input::placeholder { color: var(--text-muted); }
 
 .send-button,
 .stop-button {
     position: absolute;
-    right: 4px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
     height: 32px;
@@ -543,47 +556,60 @@ html, body {
 
 
 /* ============================================================
-   MOBILE  ≤ 768px  — full-screen, no rounded card
+   MOBILE  ≤ 768px  — full-screen flex column, keyboard stable
    ============================================================ */
 @media (max-width: 768px) {
-    html, body { height: 100dvh; overflow: hidden; }
+    html {
+        height: 100%;
+        overflow: hidden;
+    }
+    body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        position: fixed;
+        inset: 0;
+    }
 
-    .app-container { align-items: stretch; padding: 0; }
+    .app-container {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+    }
 
     .chat-wrapper {
         width: 100%;
-        /* Use dvh for accurate height accounting for browser chrome */
-        height: 100dvh;
+        height: 100%;
         border-radius: 0;
         border: none;
         box-shadow: none;
-        /* Redefine zone heights for mobile */
-        --header-h: 62px;
-        --input-h:  112px;
+        display: flex;
+        flex-direction: column;
+        --header-h: 60px;
     }
 
     /* Header tweaks */
-    .chat-header  { padding: 0 16px; }
-    .avatar-container { width: 42px; height: 42px; }
+    .chat-header  { padding: 0 16px; height: 60px; }
+    .avatar-container { width: 40px; height: 40px; }
     .user-name  { font-size: 1rem; }
     .user-title { font-size: 0.72rem; }
 
     /* Messages tweaks */
-    .chat-messages { padding: 16px 14px 10px; gap: 12px; }
+    .chat-messages { padding: 14px 14px 8px; gap: 12px; }
     .message      { max-width: 88%; }
     .message-content { font-size: 0.84rem; padding: 10px 14px; }
 
     /* Input tweaks */
-    .chat-input-area { padding: 10px 14px max(14px, env(safe-area-inset-bottom)); }
-    .suggestions     { margin-bottom: 8px; }
+    .chat-input-area { padding: 8px 12px max(10px, env(safe-area-inset-bottom)); }
+    .suggestions     { margin-bottom: 6px; }
     .suggestion-chip { font-size: 0.71rem; padding: 5px 11px; }
-    #message-input   { font-size: 0.88rem; }
-    .send-button     { width: 38px; height: 38px; }
-
-    /* Hide chips when keyboard is open to save space */
-    .chat-input-area:focus-within .suggestions { display: none; }
-    /* When chips are hidden we don't need the full input height */
-    .chat-input-area:focus-within { --input-h: 74px; height: 74px; }
+    #message-input   { font-size: 16px !important; } /* Prevents iOS auto-zoom */
+    .send-button, .stop-button { width: 34px; height: 34px; }
 }
 
 /* ============================================================
