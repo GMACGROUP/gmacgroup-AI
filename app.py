@@ -212,12 +212,35 @@ llm = ChatGroq(
 )
 
 
+# ─── Text Normalization ────────────────────────────────────────
+def normalize_text(text: str) -> str:
+    t = (text or "").lower().strip()
+    replacements = {
+        r"\bu\b": "you",
+        r"\bur\b": "your",
+        r"\br\b": "are",
+        r"\bwat\b": "what",
+        r"\bwats\b": "what is",
+        r"\bwhat's\b": "what is",
+        r"\babt\b": "about",
+        r"\bplz\b": "please",
+        r"\bpls\b": "please",
+        r"\bshs\b": "senior high school",
+        r"\bjhs\b": "junior high school",
+        r"\benginerring\b": "engineering",
+        r"\btoothen\b": "too",
+    }
+    for pattern, replacement in replacements.items():
+        t = re.sub(pattern, replacement, t)
+    return t
+
+
 # ─── Intent Detection ────────────────────────────────────────
 INTENT_MAP = {
     "introduction": ["introduce", "who are you", "tell me about yourself", "your name", "what do you do", "hey"],
-    "skills": ["skills", "experience", "work", "job", "internship", "design", "coding", "programming", "stack", "technologies"],
+    "skills": ["skills", "experience", "work", "job", "internship", "design", "coding", "programming", "stack", "technologies", "software engineer", "software engineering", "developer", "full stack", "backend", "frontend", "ai engineer", "machine learning"],
     "projects": ["project", "projects", "portfolio", "built", "system", "platform", "app"],
-    "origin": ["where are you from", "hometown", "where did you grow up", "childhood"],
+    "origin": ["where are you from", "where are u from", "where r u from", "where do you live", "where do u live", "location", "country", "based", "ghana", "accra", "hometown", "where did you grow up", "childhood", "from where", "where u from"],
     "education": [
         "studying",
         "study",
@@ -233,9 +256,13 @@ INTENT_MAP = {
         "jhs",
         "high school",
         "basic school",
+        "coursework",
+        "courses",
+        "senior high school",
+        "junior high school",
     ],
-    "hobbies": ["hobbies", "free time", "leisure", "outside school"],
-    "goals": ["goal", "dream", "ambition", "vision", "future"],
+    "hobbies": ["hobbies", "free time", "leisure", "outside school", "football", "music"],
+    "goals": ["goal", "goals", "dream", "ambition", "vision", "future"],
     "general": [],
 }
 
@@ -249,14 +276,25 @@ GREETING_NO_QUESTION_RE = re.compile(r"^(hey|hi|hello|howdy)\b[\s!?.]*$", re.IGN
 
 INTENT_FOCUS = {
     "introduction": "Introduce yourself in a warm, natural way. Keep it short.",
-    "skills": "Talk about skills and what you can do in a conversational way. Keep it short.",
+    "skills": "Talk about your software engineering, full-stack, and AI engineering skills and experience in a conversational way.",
     "projects": "Talk about projects or what you have built. Keep it short.",
-    "origin": "If asked about where you are from, answer briefly. Keep it short.",
+    "origin": "Share that you are based in Accra, Ghana. Mention your passion for building technology from Ghana for Africa and the world.",
     "education": "Mention specific institutions (University of Ghana, Legon; Achimota School), major (Computer Science / AI & ML), and key coursework or focus areas naturally.",
-    "hobbies": "Talk about hobbies briefly. Keep it short.",
-    "goals": "Talk about goals briefly. Keep it short.",
+    "hobbies": "Talk about hobbies (football, music, exploring AI research) briefly. Keep it short.",
+    "goals": "Talk about goals and your vision for AI in Africa briefly. Keep it short.",
     # For greetings and general questions, avoid long self-intros.
     "general": "Answer the message directly, very briefly (1–2 sentences). If it's a greeting, acknowledge and ask what they want to know next.",
+}
+
+INTENT_FALLBACKS = {
+    "origin": "I'm based in Accra, Ghana, where I'm currently studying and building software and AI solutions.",
+    "education": "I'm studying Computer Science with a focus on AI & Machine Learning at the University of Ghana, Legon, after completing Achimota School.",
+    "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
+    "projects": "I've built several projects including an AI WhatsApp Business Assistant, an African Skin Disease Detection System, and NLP moderation models.",
+    "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra, Ghana.",
+    "hobbies": "Outside of coding, I love playing football, listening to music, and reading about emerging AI research.",
+    "goals": "My goal is to build impactful AI systems that improve healthcare and education across Africa.",
+    "general": "I'm happy to tell you more about my projects, tech stack, education, or freelance availability—what would you like to explore?",
 }
 
 INTENT_SUGGESTIONS = {
@@ -467,7 +505,7 @@ def format_history(history):
 
 
 def detect_intent(question: str) -> str:
-    q = question.strip().lower()
+    q = normalize_text(question)
 
     # Greeting-only should NOT trigger the full introduction every time.
     if GREETING_NO_QUESTION_RE.match(q):
@@ -588,14 +626,16 @@ def build_persona_response(user_question: str, chat_history):
     # Help the retriever by biasing queries toward the right KB section.
     # This improves precision for “experience” / “skills” style questions.
     query = user_question
-    q_lower = user_question.strip().lower()
-    if any(k in q_lower for k in ["experience", "work", "company", "job", "intern"]):
-        query = f"professional experience projects responsibilities {user_question}"
-    elif any(k in q_lower for k in ["skill", "skills", "tech stack", "technology", "tools"]):
+    q_norm = normalize_text(user_question)
+    if any(k in q_norm for k in ["experience", "work", "company", "job", "intern", "software engineer", "software engineering", "developer", "full stack"]):
+        query = f"professional experience software engineering full stack projects responsibilities {user_question}"
+    elif any(k in q_norm for k in ["skill", "skills", "tech stack", "technology", "tools", "programming", "languages"]):
         query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
-    elif any(k in q_lower for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "shs", "jhs", "high school"]):
+    elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "shs", "jhs", "high school", "senior high school"]):
         query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
-    elif any(k in q_lower for k in ["portfolio", "github"]):
+    elif any(k in q_norm for k in ["from", "where", "location", "live", "based", "ghana", "accra", "origin", "hometown"]):
+        query = f"location based living in Accra Ghana Christian Agyapong {user_question}"
+    elif any(k in q_norm for k in ["portfolio", "github", "linkedin"]):
         query = f"portfolio github links {user_question}"
 
     relevant_docs = retriever.invoke(query)
@@ -625,35 +665,24 @@ def build_persona_response(user_question: str, chat_history):
         print("[DEBUG] llm.invoke returned content_len=", None if content is None else len(content))
         reply = (content or "").strip()
     except Exception as e:
-        # Log the real exception server-side only — never send it to the
-        # user, since it can contain internal details (stack info, model
-        # names, request params) alongside the fact that it's unfriendly.
         print(f"Model generation failed: {type(e).__name__}: {str(e)}")
-
         suggestions = INTENT_SUGGESTIONS.get(intent, INTENT_SUGGESTIONS["general"])
-        if not suggestions:
-            suggestions = INTENT_SUGGESTIONS["general"]
-        return FALLBACK_REPLY, random.sample(suggestions, min(3, len(suggestions)))
+        fallback_msg = INTENT_FALLBACKS.get(intent, FALLBACK_REPLY)
+        return fallback_msg, random.sample(suggestions, min(3, len(suggestions)))
 
     if not reply:
-        # Log the real reason server-side, but never send raw debug/error
-        # text to the user — that was leaking as the visible chat reply.
         print("Model returned empty content")
         suggestions = INTENT_SUGGESTIONS.get(intent, INTENT_SUGGESTIONS["general"])
-        if not suggestions:
-            suggestions = INTENT_SUGGESTIONS["general"]
-        return FALLBACK_REPLY, random.sample(suggestions, min(3, len(suggestions)))
+        fallback_msg = INTENT_FALLBACKS.get(intent, FALLBACK_REPLY)
+        return fallback_msg, random.sample(suggestions, min(3, len(suggestions)))
 
-    # Log (server-side only) whenever the raw model output still contains
-    # a reasoning tag, so you can see how often this is happening and
-    # whether max_tokens/reasoning_format need further tuning.
     if REASONING_TAG_RE.search(reply):
         print("[WARN] Raw model output contained a reasoning tag before cleaning.")
 
     reply = clean_reply(reply)
 
-    if not reply:
-        reply = "I couldn't generate a reply—try again in a moment."
+    if not reply or reply == FALLBACK_REPLY:
+        reply = INTENT_FALLBACKS.get(intent, "I'm based in Accra, Ghana, working across software engineering and AI.")
 
     suggestions = INTENT_SUGGESTIONS.get(intent, INTENT_SUGGESTIONS["general"])
     suggestions = random.sample(suggestions, min(3, len(suggestions)))
