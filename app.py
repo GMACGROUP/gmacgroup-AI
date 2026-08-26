@@ -354,18 +354,7 @@ BAD_OPENERS = [
     r"^(Chale[,!]?\s*)+",
     r"^(Herh[,!]?\s*)+",
     r"^What's good[,!]?\s*",
-    r"^Certainly[,!]?\s*",
-    r"^Absolutely[,!]?\s*",
-    r"^Of course[,!]?\s*",
-    r"^Sure[,!]?\s*",
-    r"^Yes[,!]?\s*",
-    r"^Yes,? I can[,!]?\s*",
-    r"^Yes,? I can definitely[,!]?\s*",
-    r"^I can definitely[,!]?\s*",
-    r"^Hey there[,!]?\s*",
-    r"^Great[,!]?\s*",
-    r"^I'm listening[,!]?\s*",
-    r"^I\u2019m listening[,!]?\s*",
+    r"^(Certainly|Absolutely|Of course|Sure|Yes)[,!]\s+(?=[A-Z])",
     r"^I'm here whenever you're ready[,!\.]?\s*",
     r"^I\u2019m here whenever you're ready[,!\.]?\s*",
 ]
@@ -450,17 +439,7 @@ def clean_reply(text: str) -> str:
     for pattern in BAD_OPENERS:
         text = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
 
-    # 2b) Remove common “template-ish” lead-ins that reduce human tone.
-    # Keep these conservative: only strip very specific starting phrases.
-    text = re.sub(r"(?i)^(i\s+specialize\s+in|i\s+specialise\s+in)\b\s*", "", text).strip()
-    text = re.sub(r"(?i)^my\s+core\s+stack\s+(revolves|is\s+centered)\s+(around|on)\b\s*", "", text).strip()
-    text = re.sub(r"(?i)^my\s+experience\s+(centers|centres)\s+on\b\s*", "", text).strip()
-    text = re.sub(r"(?i)^i\s+primarily\s+use\b\s*", "", text).strip()
-    text = re.sub(r"(?i)^let\s+me\s+know\s+if\s+you\s+have\s+a\s+specific\s+project\s+in\s+mind\.?\s*", "", text).strip()
-    text = re.sub(r"(?i)^please\s+share\s+the\s+details\s+of\s+what\s+you\s+have\s+in\s+mind\.?\s*", "", text).strip()
-    text = re.sub(r"(?i)^can\s+i\s+help\s+you\b\s*", "", text).strip()
-
-
+    # 2b) Remove pidgin slang if present
     for pattern in PIDGIN_PATTERNS:
         text = re.sub(pattern, "", text, flags=re.IGNORECASE)
 
