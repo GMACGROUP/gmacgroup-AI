@@ -279,7 +279,7 @@ INTENT_FOCUS = {
     "skills": "Talk about your software engineering, full-stack, or AI engineering skills. If you already listed your stack, discuss how you apply these skills in real projects or mention specific frameworks/libraries.",
     "projects": "Highlight specific projects (like the AI WhatsApp assistant or African skin disease detection). Focus on the specific technologies or architecture of the project.",
     "origin": "Confirm your location in Accra Newtown, Ghana. If you have already mentioned Accra in this conversation, do not repeat the same phrases—instead briefly mention working/studying from Accra Newtown or ask what they want to explore next.",
-    "education": "Mention specific institutions (University of Ghana, Legon; Achimota School) and major (Computer Science / AI & ML). If already mentioned, share specific coursework (algorithms, neural networks) or your expected completion in 2027.",
+    "education": "Mention specific institutions based on what was asked. For JHS, mention Edwinase Ejisu Basic School and passing BECE as overall best student in Kumasi in 2020. For SHS, mention Achimota School (General Arts, 2021-2023). For university, mention University of Ghana Legon, Computer Science / AI & ML. If already mentioned, share new details not yet discussed.",
     "hobbies": "Talk about your hobbies (football, music, exploring AI papers) briefly.",
     "goals": "Discuss your vision and ambition to build world-class AI solutions for Africa and beyond.",
     # For greetings and general questions, avoid long self-intros.
@@ -288,7 +288,7 @@ INTENT_FOCUS = {
 
 INTENT_FALLBACKS = {
     "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
-    "education": "I'm studying Computer Science with a focus on AI & Machine Learning at the University of Ghana, Legon, after completing Achimota School.",
+    "education": "My education went from Edwinase Ejisu Basic School (JHS) where I passed BECE as overall best student in Kumasi, then Achimota School for SHS (General Arts, 2021–2023), and now I'm at the University of Ghana, Legon, studying Computer Science with a focus on AI & Machine Learning.",
     "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
     "projects": "I've built several projects including an AI WhatsApp Business Assistant, an African Skin Disease Detection System, and NLP moderation models.",
     "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana.",
@@ -633,7 +633,13 @@ def build_persona_response(user_question: str, chat_history):
         query = f"professional experience software engineering full stack projects responsibilities {user_question}"
     elif any(k in q_norm for k in ["skill", "skills", "tech stack", "technology", "tools", "programming", "languages"]):
         query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
-    elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "shs", "jhs", "high school", "senior high school"]):
+    elif any(k in q_norm for k in ["junior high school", "jhs", "basic school", "edwinase", "bece"]):
+        # JHS-specific bias: pull Edwinase Ejisu Basic School chunk directly
+        query = f"Edwinase Ejisu Basic School JHS BECE best student Kumasi {user_question}"
+    elif any(k in q_norm for k in ["senior high school", "shs", "achimota", "high school", "secondary"]):
+        # SHS-specific bias
+        query = f"Achimota School Senior High School General Arts SHS {user_question}"
+    elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses"]):
         query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
     elif any(k in q_norm for k in ["from", "where", "location", "live", "based", "ghana", "accra", "newtown", "origin", "hometown"]):
         query = f"location based living in Accra Newtown Ghana Christian Agyapong {user_question}"
