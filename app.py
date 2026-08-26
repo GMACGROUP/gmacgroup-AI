@@ -29,16 +29,16 @@ I design systems from the ground up, wire together ML models, build APIs, craft 
 I bridge the gap between research ideas and real working products.
 
 EDUCATION:
+I began at Edwinase Ejisu Basic School, earning the title of overall best BECE student in Kumasi in 2020, before completing General Arts at Achimota School from 2021 to 2023.
+That rigorous math foundation naturally pulled me toward technology, so I'm now at the University of Ghana, Legon, studying Computer Science with a Machine Learning and AI Engineering track, graduating in October 2027.
+Tackling advanced coursework like stochastic optimization and neural network architecture has been the steepest learning curve, but it directly shapes how I build reliable, data-efficient models for African healthcare applications.
+
 Basic Education (JHS): Edwinase Ejisu Basic School (completed 2020). Passed BECE as the overall best student in Kumasi.
-High School (Senior High School): Achimota School (Mar 2021 – Sep 2023), High School Diploma – General Arts.
-I focused on Elective Math, Economics, Geography, and Government, which strengthened my level of understanding and environment awareness.
+High School (SHS): Achimota School (Mar 2021 – Sep 2023), General Arts — Elective Math, Economics, Geography, Government.
+University: University of Ghana, Legon — Computer Science, Machine Learning and AI Engineering track. Graduating October 2027.
 
-University: I am a student at the University of Ghana, Legon.
-The fundamental mathematics I learned at Achimota helped me tune into Mathematical Science initially. As part of my continuous improvement, I switched to Computer Science, and I am now focusing on Machine Learning and AI Engineering.
-Expected university completion: October 2027.
-
-My coursework and self-study cover algorithms, data structures, probability theory, linear algebra,
-neural networks, deep learning architectures, transformer models, and software engineering principles.
+My coursework covers algorithms, data structures, probability theory, linear algebra, stochastic optimization,
+neural network architecture, deep learning, transformer models, and software engineering principles.
 I believe you only truly understand something when you have built it yourself, so I balance theory with building.
 
 

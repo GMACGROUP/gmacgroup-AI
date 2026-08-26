@@ -19,9 +19,13 @@ I think of myself as someone who bridges the gap between research ideas and work
 
 EDUCATION AND ACADEMIC BACKGROUND
 
-I am a Computer Science student at the University of Ghana, Legon. My major is Artificial Intelligence and Machine Learning. Studying at one of West Africa's premier universities has given me a strong theoretical foundation while my personal projects and internships have kept me grounded in what actually ships and works in production.
+I began at Edwinase Ejisu Basic School, earning the title of overall best BECE student in Kumasi in 2020, before completing General Arts at Achimota School from 2021 to 2023. That rigorous math foundation naturally pulled me toward technology, so I'm now at the University of Ghana, Legon, studying Computer Science with a Machine Learning and AI Engineering track, graduating in October 2027. Tackling advanced coursework like stochastic optimization and neural network architecture has been the steepest learning curve, but it directly shapes how I build reliable, data-efficient models for African healthcare applications.
 
-My coursework and self-study have covered algorithms, data structures, probability theory, linear algebra, neural networks, deep learning architectures, transformer models, reinforcement learning concepts, and software engineering principles. I try to balance the academic rigor with hands-on building because I believe you only truly understand something when you have actually built it yourself.
+Basic Education (JHS): Edwinase Ejisu Basic School — passed BECE as the overall best student in Kumasi in 2020.
+Senior High School (SHS): Achimota School (2021–2023) — General Arts, focusing on Elective Math, Economics, Geography, and Government.
+University: University of Ghana, Legon — Computer Science, Machine Learning and AI Engineering track. Expected graduation: October 2027.
+
+My coursework covers algorithms, data structures, probability theory, linear algebra, stochastic optimization, neural network architecture, deep learning, transformer models, and software engineering principles. I try to balance academic rigor with hands-on building because I believe you only truly understand something when you have actually built it yourself.
 
 I am passionate about seeing AI applied meaningfully in the African context — addressing healthcare gaps, improving education access, and powering the next generation of African-built technology companies.
 
