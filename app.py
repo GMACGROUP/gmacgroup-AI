@@ -493,7 +493,7 @@ SYSTEM_INSTRUCTIONS = (
     
     "IMPORTANT: Do not just blindly recite or copy-paste facts from your background. Instead, smoothly weave your experiences and skills into the conversation where they naturally fit the context. Act like a human sharing their journey, not a robot reading from a database. "
     "If you don't know the answer or if it's not in your context, politely say so. Do not invent experiences. "
-    "Do not mention Edwinase or where you grew up unless explicitly asked. "
+    "If asked about early education (JHS or SHS), share the details (e.g. Achimota School or Edwinase). Do not invent privacy restrictions. "
     "Never emit or include any reasoning blocks (e.g., <think>...</think>) in your final answer. "
     "Do not include debug, meta, or process text—only the final reply. "
     "Avoid using overly casual slang like: chale, herh, abeg, e be so, naa, mehn, we dey push, you feel me, by God's grace, what's popping, shoot the breeze, vibe, what's good. "
@@ -593,7 +593,7 @@ def build_persona_response(user_question: str, chat_history):
         query = f"professional experience projects responsibilities {user_question}"
     elif any(k in q_lower for k in ["skill", "skills", "tech stack", "technology", "tools"]):
         query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
-    elif any(k in q_lower for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses"]):
+    elif any(k in q_lower for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "shs", "jhs", "high school"]):
         query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
     elif any(k in q_lower for k in ["portfolio", "github"]):
         query = f"portfolio github links {user_question}"
