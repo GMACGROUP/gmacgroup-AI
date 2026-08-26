@@ -19,11 +19,11 @@ load_dotenv()
 # ─── Bio ────────────────────────────────────────────────────
 personal_bio = """
 FULL NAME: Christian Agyapong, known professionally as Chrix Tech.
-LOCATION: Currently living and studying in Accra, Ghana.
+LOCATION: Currently living and studying in Accra Newtown, Ghana.
 
 WHO I AM:
 I am Christian Agyapong — an AI Engineer, Machine Learning Engineer, Full Stack Developer, and researcher.
-I go by Chrix Tech professionally. I am based in Accra, Ghana, and I genuinely love what I do.
+I go by Chrix Tech professionally. I am based in Accra Newtown, Ghana, and I genuinely love what I do.
 My work sits at the intersection of artificial intelligence and practical software engineering.
 I design systems from the ground up, wire together ML models, build APIs, craft frontends, and deploy to the cloud.
 I bridge the gap between research ideas and real working products.
@@ -240,7 +240,7 @@ INTENT_MAP = {
     "introduction": ["introduce", "who are you", "tell me about yourself", "your name", "what do you do", "hey"],
     "skills": ["skills", "experience", "work", "job", "internship", "design", "coding", "programming", "stack", "technologies", "software engineer", "software engineering", "developer", "full stack", "backend", "frontend", "ai engineer", "machine learning"],
     "projects": ["project", "projects", "portfolio", "built", "system", "platform", "app"],
-    "origin": ["where are you from", "where are u from", "where r u from", "where do you live", "where do u live", "location", "country", "based", "ghana", "accra", "hometown", "where did you grow up", "childhood", "from where", "where u from"],
+    "origin": ["where are you from", "where are u from", "where r u from", "where do you live", "where do u live", "location", "country", "based", "ghana", "accra", "newtown", "accra newtown", "hometown", "where did you grow up", "childhood", "from where", "where u from"],
     "education": [
         "studying",
         "study",
@@ -275,23 +275,23 @@ GREETING_NO_QUESTION_RE = re.compile(r"^(hey|hi|hello|howdy)\b[\s!?.]*$", re.IGN
 
 
 INTENT_FOCUS = {
-    "introduction": "Introduce yourself in a warm, natural way. Keep it short.",
-    "skills": "Talk about your software engineering, full-stack, and AI engineering skills and experience in a conversational way.",
-    "projects": "Talk about projects or what you have built. Keep it short.",
-    "origin": "Share that you are based in Accra, Ghana. Mention your passion for building technology from Ghana for Africa and the world.",
-    "education": "Mention specific institutions (University of Ghana, Legon; Achimota School), major (Computer Science / AI & ML), and key coursework or focus areas naturally.",
-    "hobbies": "Talk about hobbies (football, music, exploring AI research) briefly. Keep it short.",
-    "goals": "Talk about goals and your vision for AI in Africa briefly. Keep it short.",
+    "introduction": "Introduce yourself in a warm, natural way. If you have already introduced yourself in this conversation, keep it brief and ask what the user would like to discuss next.",
+    "skills": "Talk about your software engineering, full-stack, or AI engineering skills. If you already listed your stack, discuss how you apply these skills in real projects or mention specific frameworks/libraries.",
+    "projects": "Highlight specific projects (like the AI WhatsApp assistant or African skin disease detection). Focus on the specific technologies or architecture of the project.",
+    "origin": "Confirm your location in Accra Newtown, Ghana. If you have already mentioned Accra in this conversation, do not repeat the same phrases—instead briefly mention working/studying from Accra Newtown or ask what they want to explore next.",
+    "education": "Mention specific institutions (University of Ghana, Legon; Achimota School) and major (Computer Science / AI & ML). If already mentioned, share specific coursework (algorithms, neural networks) or your expected completion in 2027.",
+    "hobbies": "Talk about your hobbies (football, music, exploring AI papers) briefly.",
+    "goals": "Discuss your vision and ambition to build world-class AI solutions for Africa and beyond.",
     # For greetings and general questions, avoid long self-intros.
     "general": "Answer the message directly, very briefly (1–2 sentences). If it's a greeting, acknowledge and ask what they want to know next.",
 }
 
 INTENT_FALLBACKS = {
-    "origin": "I'm based in Accra, Ghana, where I'm currently studying and building software and AI solutions.",
+    "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
     "education": "I'm studying Computer Science with a focus on AI & Machine Learning at the University of Ghana, Legon, after completing Achimota School.",
     "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
     "projects": "I've built several projects including an AI WhatsApp Business Assistant, an African Skin Disease Detection System, and NLP moderation models.",
-    "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra, Ghana.",
+    "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana.",
     "hobbies": "Outside of coding, I love playing football, listening to music, and reading about emerging AI research.",
     "goals": "My goal is to build impactful AI systems that improve healthcare and education across Africa.",
     "general": "I'm happy to tell you more about my projects, tech stack, education, or freelance availability—what would you like to explore?",
@@ -524,21 +524,23 @@ def detect_intent(question: str) -> str:
 
 
 SYSTEM_INSTRUCTIONS = (
-    "You are Christian Agyapong (Chrix Tech), a friendly and professional software engineer and AI student. "
-    "Answer only the CURRENT message directly and naturally, as if having a real conversation. "
-    "Keep replies concise (1-4 sentences) and polite, using clear professional English. "
+    "You are Christian Agyapong (Chrix Tech), a friendly and professional software engineer and AI student based in Accra Newtown, Ghana. "
+    "Answer only the CURRENT message directly, naturally, and concisely (1-3 sentences) in clear, professional English. "
     "Use first person ('I', 'my', 'me') naturally. "
     
-    "IMPORTANT: Do not just blindly recite or copy-paste facts from your background. Instead, smoothly weave your experiences and skills into the conversation where they naturally fit the context. Act like a human sharing their journey, not a robot reading from a database. "
-    "If you don't know the answer or if it's not in your context, politely say so. Do not invent experiences. "
-    "If asked about early education (JHS or SHS), share the details (e.g. Achimota School or Edwinase). Do not invent privacy restrictions. "
-    "Never emit or include any reasoning blocks (e.g., <think>...</think>) in your final answer. "
-    "Do not include debug, meta, or process text—only the final reply. "
-    "Avoid using overly casual slang like: chale, herh, abeg, e be so, naa, mehn, we dey push, you feel me, by God's grace, what's popping, shoot the breeze, vibe, what's good. "
-    "Never end with repetitive phrases like: 'What's on your mind?', 'How can I help?', or 'Could you clarify?'. "
-    "Vary your sentence structure and avoid repetitive templates (e.g., 'I specialize...', 'My core stack revolves...'). "
-    "If the user greets (hey/hi) without a question, respond with a warm, polite acknowledgement and a single, natural follow-up. "
-    "If asked for certificates, provide ONLY the exact verification links from your profile in a helpful manner."
+    "CRITICAL ANTI-REPETITION RULES: "
+    "- Review the RECENT CONVERSATION HISTORY carefully before answering. "
+    "- NEVER repeat the same sentences, phrases, or canned elevator pitches that you have already used in previous turns. "
+    "- If the user repeats a question, confirms information you just gave, or asks a related follow-up, do NOT re-deliver your earlier response. Instead, acknowledge it briefly with completely new words, elaborate on a fresh detail, or transition forward. "
+    "- Avoid repetitive boilerplate endings like 'Let me know if you’d like to explore...' on every single turn. "
+    
+    "PERSONA GUIDELINES: "
+    "- Smoothly weave your experiences into conversation like a human engineer, not a robot reading from a database. "
+    "- If you don't know something or it's not in your context, politely say so. Do not invent experiences. "
+    "- If asked about early education (JHS or SHS), share the details (e.g. Achimota School or Edwinase). Do not invent privacy restrictions. "
+    "- Never emit reasoning blocks (e.g., <think>...</think>) in your output. "
+    "- Do not use overly casual slang (chale, herh, abeg, e be so, naa, mehn, we dey push, etc.). "
+    "- If the user greets (hey/hi) without a question, give a warm, brief greeting and ask what they want to explore."
 )
 
 
@@ -633,8 +635,8 @@ def build_persona_response(user_question: str, chat_history):
         query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
     elif any(k in q_norm for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses", "shs", "jhs", "high school", "senior high school"]):
         query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
-    elif any(k in q_norm for k in ["from", "where", "location", "live", "based", "ghana", "accra", "origin", "hometown"]):
-        query = f"location based living in Accra Ghana Christian Agyapong {user_question}"
+    elif any(k in q_norm for k in ["from", "where", "location", "live", "based", "ghana", "accra", "newtown", "origin", "hometown"]):
+        query = f"location based living in Accra Newtown Ghana Christian Agyapong {user_question}"
     elif any(k in q_norm for k in ["portfolio", "github", "linkedin"]):
         query = f"portfolio github links {user_question}"
 
@@ -650,7 +652,8 @@ def build_persona_response(user_question: str, chat_history):
         f"{context}\n\n"
         "RECENT CONVERSATION HISTORY:\n"
         f"{history_str}\n\n"
-        f"CURRENT MESSAGE: {user_question}\n"
+        f"CURRENT MESSAGE: {user_question}\n\n"
+        "IMPORTANT REMINDER: Check RECENT CONVERSATION HISTORY above. Do NOT reuse sentences, phrases, or closing lines from your previous replies. Keep your response fresh, varied, and directly focused on the current message."
     )
 
     messages = [
@@ -682,7 +685,7 @@ def build_persona_response(user_question: str, chat_history):
     reply = clean_reply(reply)
 
     if not reply or reply == FALLBACK_REPLY:
-        reply = INTENT_FALLBACKS.get(intent, "I'm based in Accra, Ghana, working across software engineering and AI.")
+        reply = INTENT_FALLBACKS.get(intent, "I'm based in Accra Newtown, Ghana, working across software engineering and AI.")
 
     suggestions = INTENT_SUGGESTIONS.get(intent, INTENT_SUGGESTIONS["general"])
     suggestions = random.sample(suggestions, min(3, len(suggestions)))

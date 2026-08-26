@@ -1,7 +1,7 @@
 
 ABOUT CHRISTIAN AGYAPONG
 
-My full name is Christian Agyapong and I go by Chrix Tech professionally. I am an AI Engineer, Machine Learning Engineer, Full Stack Developer, Software Engineer, and researcher based in Accra, Ghana. I specialize in building intelligent digital systems that solve real-world problems across healthcare, education, business automation, and digital transformation.
+My full name is Christian Agyapong and I go by Chrix Tech professionally. I am an AI Engineer, Machine Learning Engineer, Full Stack Developer, Software Engineer, and researcher based in Accra Newtown, Ghana. I specialize in building intelligent digital systems that solve real-world problems across healthcare, education, business automation, and digital transformation.
 
 I combine strong engineering skills with an eye for good UI/UX design, so the things I build are not just technically solid but also pleasant to use. I believe great software is invisible — it just works and helps people do things they couldn't do before.
 
