@@ -613,13 +613,34 @@ def build_persona_response(user_question: str, chat_history):
     last_ai = _last_ai_reply(chat_history)
     last_topic = _extract_last_topic(chat_history)
 
-    # Detect follow-up phrasing — user is continuing a previous topic
+    # Detect follow-up phrasing — two tiers:
+    # 1) True elaboration requests: user wants more detail on the previous topic
+    # 2) Acknowledgments: user is just confirming/reacting, NOT asking for more content
     q_norm = normalize_text(user_question)
-    FOLLOW_UP_RE = re.compile(
-        r"^(tell me more|more details|elaborate|go on|and then|what else|continue|and|also|okay|ok|great|nice|got it|interesting|really|cool|wow|noted|alright|right)\.?\s*$",
+    TRUE_FOLLOW_UP_RE = re.compile(
+        r"^(tell me more|tell me more details|more details|more info|elaborate|go on|what else|continue|can you explain|explain more|expand on that)\.?\s*$",
         re.IGNORECASE
     )
-    is_follow_up = bool(FOLLOW_UP_RE.match(user_question.strip()))
+    ACKNOWLEDGMENT_RE = re.compile(
+        r"^(okay|ok|alright|right|got it|noted|interesting|really|cool|wow|nice|great|makes sense|i see|ah|oh i see|sounds good|that's great|that's cool|that's interesting|awesome)\.?[!]?\s*$",
+        re.IGNORECASE
+    )
+    is_follow_up = bool(TRUE_FOLLOW_UP_RE.match(user_question.strip()))
+    is_acknowledgment = bool(ACKNOWLEDGMENT_RE.match(user_question.strip()))
+
+    # Acknowledgments: return a short grounded redirect without calling the LLM at all
+    if is_acknowledgment:
+        ack_responses = [
+            "What would you like to explore next—my projects, skills, or availability?",
+            "What's your next question? I can go into my projects, stack, or background.",
+            "Which direction do you want to go—technical work, education, or collaboration?",
+            "What else would you like to know about me?",
+        ]
+        # Avoid repeating what was last said
+        candidates = [r for r in ack_responses if _jaccard_similarity(r, last_ai) < 0.4]
+        reply = random.choice(candidates if candidates else ack_responses)
+        suggestions = INTENT_SUGGESTIONS.get("general", [])
+        return reply, random.sample(suggestions, min(3, len(suggestions)))
 
     # If user is just greeting (e.g., "hey"), force a short, non-repetitive reply.
     q = user_question.strip().lower()
@@ -692,17 +713,21 @@ def build_persona_response(user_question: str, chat_history):
     elif any(k in q_norm for k in ["portfolio", "github", "linkedin"]):
         query = f"portfolio github links {user_question}"
     elif is_follow_up and last_topic:
-        # Follow-up: bias retrieval toward the last topic the AI discussed
+        # True elaboration request: bias retrieval toward the last topic the AI discussed
         query = f"{last_topic} {user_question}"
 
     relevant_docs = retriever.invoke(query)
     context = format_docs(relevant_docs)
     history_str = format_history(chat_history)
 
-    # Inject last topic context for follow-ups
+    # Inject last topic context ONLY for true elaboration follow-ups
     follow_up_hint = ""
     if is_follow_up and last_topic:
-        follow_up_hint = f"\nFOLLOW-UP CONTEXT: The user is continuing the previous topic. {last_topic}. Add a fresh, specific detail not yet mentioned.\n"
+        follow_up_hint = (
+            f"\nFOLLOW-UP CONTEXT: The user wants more detail on the previous topic. {last_topic}."
+            f" Add ONE fresh, specific detail that is explicitly in the RELEVANT FACTS above."
+            f" Do NOT invent, extrapolate, or add anything not present in the facts provided.\n"
+        )
 
     human_text = (
         "FOCUS FOR THIS REPLY:\n"
