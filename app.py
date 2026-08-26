@@ -29,10 +29,12 @@ I design systems from the ground up, wire together ML models, build APIs, craft 
 I bridge the gap between research ideas and real working products.
 
 EDUCATION:
+Basic Education (JHS): Edwinase Ejisu Basic School (completed 2020). Passed BECE as the overall best student in Kumasi.
 High School (Senior High School): Achimota School (Mar 2021 – Sep 2023), High School Diploma – General Arts.
+I focused on Elective Math, Economics, Geography, and Government, which strengthened my level of understanding and environment awareness.
 
-I am a Computer Science student at the University of Ghana, Legon.
-My major is Artificial Intelligence and Machine Learning.
+University: I am a student at the University of Ghana, Legon.
+The fundamental mathematics I learned at Achimota helped me tune into Mathematical Science initially. As part of my continuous improvement, I switched to Computer Science, and I am now focusing on Machine Learning and AI Engineering.
 Expected university completion: October 2027.
 
 My coursework and self-study cover algorithms, data structures, probability theory, linear algebra,
@@ -227,6 +229,10 @@ INTENT_MAP = {
         "education",
         "background",
         "studies",
+        "shs",
+        "jhs",
+        "high school",
+        "basic school",
     ],
     "hobbies": ["hobbies", "free time", "leisure", "outside school"],
     "goals": ["goal", "dream", "ambition", "vision", "future"],
