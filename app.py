@@ -252,7 +252,7 @@ INTENT_FOCUS = {
     "skills": "Talk about skills and what you can do in a conversational way. Keep it short.",
     "projects": "Talk about projects or what you have built. Keep it short.",
     "origin": "If asked about where you are from, answer briefly. Keep it short.",
-    "education": "Talk about education and studies briefly. Keep it short.",
+    "education": "Mention specific institutions (University of Ghana, Legon; Achimota School), major (Computer Science / AI & ML), and key coursework or focus areas naturally.",
     "hobbies": "Talk about hobbies briefly. Keep it short.",
     "goals": "Talk about goals briefly. Keep it short.",
     # For greetings and general questions, avoid long self-intros.
@@ -453,7 +453,7 @@ def clean_reply(text: str) -> str:
 
 def format_docs(docs):
     text = "\n\n".join(d.page_content for d in docs)
-    return text[:900]  # increased from 350 → 900 for richer context without mid-sentence cuts
+    return text[:1500]  # increased for richer context without mid-sentence cuts
 
 
 def format_history(history):
@@ -593,6 +593,8 @@ def build_persona_response(user_question: str, chat_history):
         query = f"professional experience projects responsibilities {user_question}"
     elif any(k in q_lower for k in ["skill", "skills", "tech stack", "technology", "tools"]):
         query = f"technical skills programming languages frontend backend databases cloud skills {user_question}"
+    elif any(k in q_lower for k in ["education", "school", "university", "college", "degree", "major", "study", "studying", "academic", "coursework", "courses"]):
+        query = f"education academic background University of Ghana Legon Achimota Computer Science Machine Learning {user_question}"
     elif any(k in q_lower for k in ["portfolio", "github"]):
         query = f"portfolio github links {user_question}"
 
