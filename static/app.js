@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { 
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
