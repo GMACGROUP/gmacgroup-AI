@@ -209,7 +209,7 @@ llm = ChatGroq(
     model="qwen/qwen3.6-27b",
     temperature=0.5,   # slightly lower for better factual accuracy on personal domain
     max_tokens=1800,
-    model_kwargs={"reasoning_format": "hidden"},  # strip <think> server-side — eliminates reasoning latency
+    reasoning_format="hidden",  # strip <think> server-side — eliminates reasoning latency
 )
 
 
