@@ -205,12 +205,21 @@ if not api_key:
 #    never appears in response.content in the first place. If your
 #    installed langchain-groq version doesn't forward this kwarg,
 #    the clean_reply() fallback fix below still protects you.
-llm = ChatGroq(
-    model="qwen/qwen3.6-27b",
-    temperature=0.5,   # slightly lower for better factual accuracy on personal domain
-    max_tokens=1800,
-    reasoning_format="hidden",  # strip <think> server-side — eliminates reasoning latency
-)
+try:
+    llm = ChatGroq(
+        model="qwen/qwen3.6-27b",
+        temperature=0.5,
+        max_tokens=1800,
+        reasoning_format="hidden",  # strip <think> server-side — eliminates reasoning latency
+    )
+except Exception:
+    # Older langchain-groq versions don't accept reasoning_format as a direct param.
+    # Fall back without it — clean_reply() will still strip any <think> blocks client-side.
+    llm = ChatGroq(
+        model="qwen/qwen3.6-27b",
+        temperature=0.5,
+        max_tokens=1800,
+    )
 
 
 # ─── Text Normalization ────────────────────────────────────────
@@ -314,7 +323,7 @@ INTENT_FOCUS = {
 
 INTENT_FALLBACKS = {
     "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
-    "education": "My education went from Edwinase Ejisu Basic School (JHS) where I passed BECE as overall best student in Kumasi, to Achimota School for SHS (General Arts, 2021–2023), and now I'm at the University of Ghana, Legon, studying Computer Science with a focus on AI & Machine Learning.",
+    "education": "Started at Edwinase Ejisu Basic School, where I passed the BECE as the overall best student in Kumasi in 2020. From there I went to Achimota School for SHS, studying General Arts from 2021 to 2023. Now I'm at the University of Ghana, Legon, pursuing Computer Science with a focus on Machine Learning and AI Engineering — graduating October 2027.",
     "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
     "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), and a TweetEval NLP classifier.",
     "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana, currently studying Computer Science at UG Legon.",
