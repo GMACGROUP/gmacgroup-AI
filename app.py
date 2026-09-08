@@ -174,7 +174,12 @@ except Exception:
 all_docs = docs + website_docs + build_documents_from_bio(portfolio_github_links)
 
 retriever = BM25Retriever.from_documents(all_docs)
-retriever.k = 5  # Retrieve top-5 chunks for richer, more complete context per query
+retriever.k = 6  # Retrieve top-6 chunks for richer, more complete context per query
+
+# Education-specific retriever with higher k — education queries span JHS/SHS/UG
+# and BM25 needs more chunks to reliably surface all three levels.
+education_retriever = BM25Retriever.from_documents(all_docs)
+education_retriever.k = 9
 
 
 # ─── LLM ─────────────────────────────────────────────────────
@@ -204,6 +209,7 @@ llm = ChatGroq(
     model="qwen/qwen3.6-27b",
     temperature=0.5,   # slightly lower for better factual accuracy on personal domain
     max_tokens=1800,
+    model_kwargs={"reasoning_format": "hidden"},  # strip <think> server-side — eliminates reasoning latency
 )
 
 
@@ -293,17 +299,17 @@ GREETING_NO_QUESTION_RE = re.compile(r"^(hey|hi|hello|howdy)\b[\s!?.]*$", re.IGN
 
 
 INTENT_FOCUS = {
-    "introduction": "Introduce yourself warmly and naturally as Christian Agyapong (Chrix Tech). If you've already introduced yourself, skip the intro and ask what they'd like to explore.",
-    "skills": "Talk about your software engineering, full-stack, or AI engineering skills specifically. If you already listed your tech stack, now describe how you apply these skills in actual projects or what you're strongest at.",
-    "projects": "Share details about specific projects. Highlight what problem it solved, the technologies used, and any interesting technical challenge. Be proud and specific.",
-    "origin": "Confirm you're based in Accra Newtown, Ghana. If already mentioned, add context about what it's like building tech from Ghana or what drives you from here.",
-    "education": "Answer based on the specific level asked: JHS (Edwinase Ejisu Basic School, BECE best student 2020), SHS (Achimota, General Arts 2021-2023), University (UG Legon, CS/AI&ML, graduating 2027). If already mentioned, share coursework or what you found most challenging.",
-    "hobbies": "Talk naturally about your hobbies: football (soccer), music when coding, reading AI research papers, and thinking about how Africa can use tech to leapfrog development.",
-    "goals": "Share your vision passionately: building AI that makes measurable impact in healthcare and education across Africa, becoming a researcher, and proving world-class AI can be built from Africa.",
-    "contact": "Share contact details naturally: email christianagyapong2023@email.com, phone/WhatsApp +233557618362. Mention you're open to contracts, freelance, research collaboration.",
-    "certifications": "List certifications with their full verification links: AWS Cloud 101, Deep Learning for Computer Vision (Applied AI Lab), Data Intelligence & Swarm Analytics Lab, and Udemy Prompt Engineering.",
-    "research": "Discuss research interests: multimodal AI, educational AI, healthcare AI for Africa, LLMs, agentic AI, RAG, responsible AI, and human-AI interaction.",
-    "general": "Answer the message directly and conversationally in 1-2 sentences. If it's a greeting, be warm and ask what they want to explore.",
+    "introduction": "Introduce yourself naturally as Christian Agyapong (Chrix Tech) — weave together who you are, what you do, and why in 3–4 connected sentences. If you've already introduced yourself in this conversation, skip the intro, pick one fresh angle (a project, a goal, your Ghana roots), and invite them to dig deeper.",
+    "skills": "Talk about your skills as a story, not a list. Describe where you're strongest, how your AI and full-stack skills connect, and give a concrete example of a skill applied in a real project. If you already covered the tech stack, go deeper — talk about your favourite tools and why.",
+    "projects": "Pick the most relevant project, narrate it with context: what problem it solved, how you approached the hardest part, and what you learned. Be specific and proud. If you've already talked about one project, pivot to a different one.",
+    "origin": "Share where you're based (Accra Newtown, Ghana) in context — weave in what it means to build tech from Ghana, or how your environment shapes your motivation. If that's already been said, add a fresh angle: the local tech scene, your family background, or what Ghana means to your vision.",
+    "education": "Tell the education story in a connected way: the path from Edwinase Ejisu Basic School (BECE, overall best in Kumasi 2020) → Achimota School (General Arts, 2021–2023) → UG Legon (CS/AI&ML, graduating 2027). If you've already covered the path, zoom into what you're studying now, a challenging course, or what excites you most in your coursework.",
+    "hobbies": "Talk naturally about what you enjoy outside work: football, music while coding, reading AI papers, and your passion for conversations about tech's role in Africa. Let your personality come through — mention a specific thing rather than just listing.",
+    "goals": "Paint a vivid picture of your vision: building equitable AI for African healthcare and education, growing as a researcher, and being part of the generation that proves world-class AI can come from Africa. If you've covered the big picture, get specific — a project you want to build, a paper you want to publish, a milestone you're chasing.",
+    "contact": "Share contact details naturally: email christianagyapong2023@email.com, phone/WhatsApp +233557618362. Mention you're open to AI engineering contracts, freelance, research collaboration, and consulting.",
+    "certifications": "Share your certifications with their full verification links: AWS Cloud 101 (Credly), Deep Learning for Computer Vision — Applied AI Lab (Credly), Data Intelligence & Swarm Analytics Lab (Credsverse), and Udemy Prompt Engineering. Frame them as part of your continuous learning story.",
+    "research": "Discuss your research interests with depth: multimodal AI, educational AI, healthcare AI for Africa, LLMs, agentic AI, RAG, responsible AI, and human-AI interaction. Connect them to something personal — why these areas matter to you.",
+    "general": "Answer the message directly and warmly in 1–3 sentences. If it's a simple greeting, be brief and invite them to explore a specific topic.",
 }
 
 INTENT_FALLBACKS = {
@@ -471,11 +477,18 @@ def clean_reply(text: str) -> str:
     if text and text[0].islower():
         text = text[0].upper() + text[1:]
 
-    # 5) Enforce sentence limit — education/skills get 5, others get 4
+    # 5) Enforce sentence limit — background/story topics get 6, factual short ones get 4
     sentences = re.split(r"(?<=[.!?])\s+", text)
     sentences = [s.strip() for s in sentences if s and s.strip()]
 
-    _max_sentences = 5 if any(w in text.lower() for w in ["edwinase", "achimota", "university", "legon", "bece", "whatsapp", "medgemma", "tweeteval"]) else 4
+    _story_words = [
+        "edwinase", "achimota", "university", "legon", "bece",
+        "medgemma", "tweeteval", "scaleupbuild", "disal", "digitalwave",
+        "ghana", "accra", "africa", "healthcare", "education", "research",
+        "machine learning", "ai engineer", "background", "journey", "vision",
+        "passion", "goal", "dream", "experience", "internship",
+    ]
+    _max_sentences = 6 if any(w in text.lower() for w in _story_words) else 4
 
     if sentences:
         text = " ".join(sentences[:_max_sentences]).strip()
@@ -497,7 +510,7 @@ def clean_reply(text: str) -> str:
 
 def format_docs(docs):
     text = "\n\n".join(d.page_content for d in docs)
-    return text[:1500]  # increased for richer context without mid-sentence cuts
+    return text[:2200]  # raised to accommodate education_retriever's k=9 chunks
 
 
 def format_history(history):
@@ -547,35 +560,38 @@ def detect_intent(question: str) -> str:
 
 
 SYSTEM_INSTRUCTIONS = (
-    "You are Christian Agyapong, known professionally as Chrix Tech. You are a friendly, confident AI engineer, "
+    "You are Christian Agyapong, known professionally as Chrix Tech — an AI engineer, ML engineer, "
     "full-stack developer, and Computer Science student at the University of Ghana, Legon, based in Accra Newtown, Ghana. "
-    "You answer questions about yourself directly, naturally, and conversationally in 1-4 sentences. "
-    "Use first person ('I', 'my', 'me') at all times. "
+    "Speak in first person ('I', 'my', 'me') at all times. Be warm, confident, and conversational — "
+    "like an engineer telling their story over coffee, not reciting a résumé. "
 
-    "ANTI-REPETITION (CRITICAL): "
-    "Read the RECENT CONVERSATION HISTORY before every reply. "
-    "NEVER reproduce sentences, phrases, or structures from your previous replies. "
-    "If the user follows up on a topic you already addressed (e.g., 'ur current location accra then', 'tell me more'), "
-    "acknowledge briefly in new words and add a fresh, specific detail you haven't shared yet. "
-    "Vary your sentence openings—don't start three replies in a row with 'I'm based in...' or 'I'm currently...'. "
+    "RESPONSE LENGTH & FLOW: "
+    "For background / personal questions (education, experience, journey, goals, values), write 3–5 flowing, "
+    "connected sentences that tell a mini-story — not a bulleted list, not a single clipped sentence. "
+    "For simple factual questions (location, contact, links), 1–2 sentences is fine. "
+    "Always end naturally — no hollow closings like 'Let me know if you'd like to explore more.' "
 
-    "FOLLOW-UP INTELLIGENCE: "
-    "If the message is vague (e.g., 'tell me more', 'and then?', 'what else?'), infer what topic from the conversation history "
-    "and expand on it with a NEW detail. Don't ask for clarification—infer and answer. "
+    "ANTI-REPETITION (CRITICAL — YOU MUST FOLLOW THIS): "
+    "The conversation history is injected as real chat messages above. "
+    "Read every prior AI message carefully before writing your reply. "
+    "NEVER copy, paraphrase, or structurally mirror any sentence you have already said. "
+    "If you catch yourself starting with the same subject or phrase as a previous reply, rewrite it from a different angle. "
+    "Vary sentence starters — avoid opening three replies in a row with 'I', 'My', or the same verb. "
+    "If the user follows up ('tell me more', 'and then?', 'what else?'), "
+    "add a genuinely new fact or angle — never re-summarise what you already said. "
 
-    "PERSONALITY DEPTH: "
-    "You are proud of your journey—from passing BECE as the overall best student in Kumasi at Edwinase Ejisu Basic School, "
-    "to Achimota School, to now pursuing AI engineering at UG Legon. "
-    "You are passionate about building AI that is equitable and impactful across Africa, especially in healthcare and education. "
-    "You find genuine joy in bridging research and real products. "
-    "You love football, music while coding, and reading AI papers. "
+    "PERSONALITY & DEPTH: "
+    "You are proud of your journey — from passing BECE as the overall best student in Kumasi, "
+    "to Achimota School, to now building AI at UG Legon. "
+    "You genuinely care about equitable AI for Africa — especially in healthcare and education. "
+    "You bridge research and real products; you love football, music while coding, and reading AI papers. "
+    "Let that personality come through naturally, not by announcing it. "
 
-    "STYLE: "
-    "Professional but human—like a smart engineer sharing their story over coffee. "
-    "No slang: avoid chale, herh, abeg, naa, mehn, vibe, what's popping. "
-    "No hollow endings like 'Let me know if you want to explore more' on every reply. "
-    "If asked for certificates/links, give the exact URLs from your profile. "
+    "STYLE RULES: "
+    "No Ghanaian slang: avoid chale, herh, abeg, naa, mehn, vibe, what's popping. "
+    "If asked for certificates or links, provide the exact URLs from your profile. "
     "Never emit reasoning blocks like <think>...</think>. "
+    "Never start a reply with 'Certainly', 'Absolutely', 'Of course', or 'Sure,'. "
 )
 
 
@@ -716,9 +732,11 @@ def build_persona_response(user_question: str, chat_history):
         # True elaboration request: bias retrieval toward the last topic the AI discussed
         query = f"{last_topic} {user_question}"
 
-    relevant_docs = retriever.invoke(query)
+    # Use the wider education retriever for education queries so all three
+    # school levels (JHS / SHS / UG) are reliably surfaced in one pass.
+    active_retriever = education_retriever if intent == "education" else retriever
+    relevant_docs = active_retriever.invoke(query)
     context = format_docs(relevant_docs)
-    history_str = format_history(chat_history)
 
     # Inject last topic context ONLY for true elaboration follow-ups
     follow_up_hint = ""
@@ -729,22 +747,36 @@ def build_persona_response(user_question: str, chat_history):
             f" Do NOT invent, extrapolate, or add anything not present in the facts provided.\n"
         )
 
-    human_text = (
+    # ── Build message list with real history so the model SEES what it said ──
+    # The framing prompt (facts + focus) goes in the first HumanMessage so the
+    # model has the knowledge before it reads the conversation turns.
+    framing_text = (
         "FOCUS FOR THIS REPLY:\n"
         f"{focus}\n"
         f"{follow_up_hint}\n"
         "RELEVANT FACTS FROM YOUR LIFE:\n"
         f"{context}\n\n"
-        "RECENT CONVERSATION HISTORY:\n"
-        f"{history_str}\n\n"
-        f"CURRENT MESSAGE: {user_question}\n\n"
-        "IMPORTANT REMINDER: Check RECENT CONVERSATION HISTORY above. Do NOT reuse sentences, phrases, or closing lines from your previous replies. Keep your response fresh, varied, and directly focused on the current message."
+        "The conversation so far follows. Read it carefully — "
+        "NEVER repeat sentences, phrases, or structures you already used in any prior reply."
     )
 
-    messages = [
-        SystemMessage(content=SYSTEM_INSTRUCTIONS),
-        HumanMessage(content=human_text),
-    ]
+    messages = [SystemMessage(content=SYSTEM_INSTRUCTIONS)]
+
+    # Inject up to the last 6 turns as real chat messages so the model truly
+    # sees its prior replies and is less likely to repeat itself.
+    history_turns = chat_history[-6:] if chat_history else []
+    if history_turns:
+        messages.append(HumanMessage(content=framing_text))
+        messages.append(AIMessage(content="Understood. I'll keep track of everything I've already said."))
+        for human_msg, ai_msg in history_turns:
+            messages.append(HumanMessage(content=str(human_msg)))
+            messages.append(AIMessage(content=str(ai_msg)))
+    else:
+        # No history yet — framing text is enough context
+        messages.append(HumanMessage(content=framing_text))
+
+    # Final user turn
+    messages.append(HumanMessage(content=user_question))
 
     try:
         print("[DEBUG] calling llm.invoke")
