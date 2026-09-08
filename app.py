@@ -670,15 +670,39 @@ def build_persona_response(user_question: str, chat_history):
     # If user is just greeting (e.g., "hey"), force a short, non-repetitive reply.
     q = user_question.strip().lower()
     if GREETING_NO_QUESTION_RE.match(user_question.strip()) or (GREETING_ONLY_RE.match(user_question.strip()) and len(user_question.strip().split()) <= 2):
+
+        # Detect if the user has been saying just "hey/hi" repeatedly —
+        # if so, give a gentle nudge instead of another options list.
+        recent_greetings = sum(
+            1 for h, _ in chat_history[-4:]
+            if GREETING_NO_QUESTION_RE.match((h or "").strip())
+               or (GREETING_ONLY_RE.match((h or "").strip()) and len((h or "").strip().split()) <= 2)
+        )
+        if recent_greetings >= 2:
+            nudge_pool = [
+                "Still here! Go ahead and ask me anything — I don't bite.",
+                "I'm listening — what's on your mind?",
+                "You can just ask, I'll answer. What do you want to know?",
+                "Take your time. What would you like to know about me?",
+            ]
+            candidates = [r for r in nudge_pool if _jaccard_similarity(r, last_ai) < 0.4]
+            reply = random.choice(candidates if candidates else nudge_pool)
+            suggestions = random.sample(INTENT_SUGGESTIONS.get("general", []), min(3, len(INTENT_SUGGESTIONS.get("general", []))))
+            return reply, suggestions
+
+        # Genuinely varied greeting pool — different structures, not just word swaps.
         greeting_pool = [
-            "Hey! What do you want to explore today—projects, skills, or availability?",
-            "Hi—what are you curious about: AI work, my projects, or freelance?",
-            "Hey there. Ask me anything—projects, tech skills, or availability.",
-            "Hi! Quick check—do you want details about what I’ve built, or what I do (skills)?",
-            "Hey! I’m Chrix Tech. What should we talk about—AI projects, my stack, or scheduling?",
-            "Hi—what’s the question? I can share projects, experience, or whether I’m available.",
-            "Hey—happy to help. Are you looking for projects, skills, or freelance availability?",
-            "Yo—what’s up? Tell me what you’re looking for: projects, skills, or availability.",
+            # Open-ended, warm
+            "Hey! What do you want to know about me?",
+            "Hi — go ahead, ask me anything.",
+            "Hey there — what brought you here today?",
+            # One-line intro + invite
+            "I'm Christian Agyapong — AI engineer, full-stack dev, CS student at UG Legon. What would you like to explore?",
+            "Chrix Tech here. What do you want to dig into — my projects, background, or something else?",
+            # Specific option prompts (keep a few, but not all)
+            "Hi — curious about my AI work, or something else entirely?",
+            "Hey — want to hear about what I've built, or what I'm studying?",
+            "What's the question? I'm an open book.",
         ]
 
         # Anti-repetition: avoid choosing something too similar to the last AI reply.
