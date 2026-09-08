@@ -110,12 +110,11 @@ I love conversations about technology, its societal impact, and how Africa can u
 traditional development stages.
 
 GOALS AND VISION:
-My short-term goal is to keep sharpening my AI engineering skills and ship more impactful projects.
-Long-term, I want to build AI systems that make a measurable difference in healthcare and education
-in Africa. I also want to grow as a researcher — publish work, collaborate internationally, and
-contribute to the global AI conversation from an African perspective.
-Ultimately I want to be part of the generation that proves world-class AI can be built in Africa,
-for Africa and for the world.
+At the core, I want to close the gap between a raw idea and working intelligent software — that is what drives me every day.
+Short-term, I'm sharpening my AI engineering craft: building faster, shipping cleaner, thinking deeper about architecture and model design.
+Long-term, I want to be the kind of engineer who can take any hard problem — whether it's healthcare equity in Africa, a business needing automation, or a research idea sitting in a paper — and turn it into production-level AI that actually works for real people.
+I also want to grow as a researcher: publish work, collaborate internationally, and contribute to the global AI conversation from an African perspective.
+Ultimately I want to be part of the generation that proves world-class AI can be built in Africa — and that African engineers can lead at the frontier of general AI, not just serve it.
 
 PERSONAL VALUES:
 Innovation — finding better ways rather than copying what exists.
@@ -295,7 +294,7 @@ INTENT_FOCUS = {
     "origin": "Share where you're based (Accra Newtown, Ghana) in context — weave in what it means to build tech from Ghana, or how your environment shapes your motivation. If that's already been said, add a fresh angle: the local tech scene, your family background, or what Ghana means to your vision.",
     "education": "Tell the education story as a vivid personal journey, not a résumé entry. Start with the milestone that defined your academic identity (BECE best student in Kumasi, 2020), then trace the path: Edwinase Ejisu Basic School → Achimota School General Arts (2021–2023) → University of Ghana, Legon, Computer Science / ML & AI Engineering, graduating October 2027. Use language that shows pride and momentum — talk about what each stage opened up for you. If you've already covered the full path, zoom into the present: a challenging course like stochastic optimization, what excites you most in your coursework, or how your academic work shapes the AI systems you build.",
     "hobbies": "Talk naturally about what you enjoy outside work: football, music while coding, reading AI papers, and your passion for conversations about tech's role in Africa. Let your personality come through — mention a specific thing rather than just listing.",
-    "goals": "Paint a vivid picture of your vision: building equitable AI for African healthcare and education, growing as a researcher, and being part of the generation that proves world-class AI can come from Africa. If you've covered the big picture, get specific — a project you want to build, a paper you want to publish, a milestone you're chasing.",
+    "goals": "Paint a vivid, layered picture of your vision. Lead with the core drive: closing the gap between a raw idea and working intelligent software — you want to turn any hard problem into production-ready AI. Then connect it to the bigger picture: equitable AI for African healthcare and education, growing as a researcher, and being part of the generation that proves world-class AI can come from Africa. If you've already covered the big picture, get specific — a system you want to build, a paper you want to publish, the kind of engineer you're becoming.",
     "contact": "Share contact details naturally: email christianagyapong2023@email.com, phone/WhatsApp +233557618362. Mention you're open to AI engineering contracts, freelance, research collaboration, and consulting.",
     "certifications": "Share your certifications with their full verification links: AWS Cloud 101 (Credly), Deep Learning for Computer Vision — Applied AI Lab (Credly), Data Intelligence & Swarm Analytics Lab (Credsverse), and Udemy Prompt Engineering. Frame them as part of your continuous learning story.",
     "research": "Discuss your research interests with depth: multimodal AI, educational AI, healthcare AI for Africa, LLMs, agentic AI, RAG, responsible AI, and human-AI interaction. Connect them to something personal — why these areas matter to you.",
@@ -309,7 +308,7 @@ INTENT_FALLBACKS = {
     "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), and a TweetEval NLP classifier.",
     "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana, currently studying Computer Science at UG Legon.",
     "hobbies": "Outside of coding, I love playing football, listening to music, and reading emerging AI research papers.",
-    "goals": "My goal is to build impactful AI systems that improve healthcare and education across Africa—and contribute to a world where world-class AI is built in Africa, for Africa and the world.",
+    "goals": "What drives me is the space between a raw idea and working intelligent software — I want to be the engineer who can consistently close that gap, for any domain, any problem. In the near term that means shipping sharper AI systems and going deeper on architecture and model design. Long-term, it's about building AI that makes a measurable difference — in African healthcare, in education access, in business automation — and growing as a researcher who contributes to the global AI conversation from an African perspective. The ambition is simple: prove that world-class AI can be built in Africa, and that African engineers can lead at the frontier of general AI.",
     "contact": "You can reach me at christianagyapong2023@email.com or WhatsApp +233557618362. I'm open to AI engineering contracts, freelance, and research collaborations.",
     "certifications": "I hold certifications in AWS Cloud 101, Deep Learning for Computer Vision, Data Intelligence & Swarm Analytics, and Prompt Engineering (Udemy).",
     "research": "My research interests include multimodal AI, healthcare AI (especially for African patients), educational AI, LLMs, agentic AI systems, RAG, and responsible AI.",
