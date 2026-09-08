@@ -7,9 +7,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clear-btn');
     const suggestions = document.querySelectorAll('.suggestion-chip');
 
+    // Pool of opening greetings — one is picked at random each session
+    const OPENING_GREETINGS = [
+        "Hey — I'm Chrix Tech. Ask me anything: my projects, stack, background, or availability.",
+        "What's up? I'm Christian Agyapong — AI engineer, full-stack dev, CS student at UG Legon. What would you like to explore?",
+        "Hey! Chrix here. Curious about my AI work, education, or freelance availability — where do you want to start?",
+        "Hi there — I'm Chrix Tech. Whether it's projects, skills, or hiring me, I'm an open book. Go ahead.",
+        "Hey — glad you're here. I'm Christian Agyapong. Ask me about what I've built, what I'm studying, or how to work with me.",
+        "What do you want to know? I'm Chrix Tech — AI engineer and developer based in Accra. Projects, stack, goals — pick one.",
+    ];
+    const _openingGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+
+    // Inject the chosen greeting into the HTML placeholder bubble
+    const _greetingEl = document.getElementById('initial-greeting-text');
+    if (_greetingEl) _greetingEl.textContent = _openingGreeting;
+
     // State
     let chatHistory = [
-        ["Hi", "Hey! I’m Chrix Tech. What would you like to ask—projects, skills, or availability?"]
+        ["Hi", _openingGreeting]
     ];
     let isWaitingForResponse = false;
     let abortController = new AbortController();
@@ -30,12 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     clearBtn.addEventListener('click', () => {
+        const _resetGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
         chatHistory = [
-            ["Hi", "Hey! I’m Chrix Tech. What would you like to ask—projects, skills, or availability?"]
+            ["Hi", _resetGreeting]
         ];
         chatMessages.innerHTML = `
             <div class="message ai-message">
-                <div class="message-content">Hey! I’m Chrix Tech. What would you like to ask—projects, skills, or availability?</div>
+                <div class="message-content">${_resetGreeting}</div>
                 <span class="message-time" aria-hidden="true">Just now</span>
             </div>
         `;
