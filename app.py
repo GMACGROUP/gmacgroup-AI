@@ -191,34 +191,16 @@ if not api_key:
         "Set it in your deployment secrets (e.g., fly secrets set GROQ_API_KEY=...)."
     )
 
-# NOTE ON THE FIX:
-# qwen/qwen3.6-27b is a reasoning model — it emits a <think>...</think>
-# block before its real answer. Two changes here address the root cause
-# instead of only patching it after the fact:
-#
-# 1. max_tokens raised from 280 -> 900. At 280 tokens, the model was
-#    running out of budget *while still inside <think>...</think>*,
-#    so the reasoning block never closed and the real reply was never
-#    written at all.
-# 2. `reasoning_format="hidden"` (Groq-specific param, passed via
-#    model_kwargs) asks Groq's API to strip reasoning server-side so it
-#    never appears in response.content in the first place. If your
-#    installed langchain-groq version doesn't forward this kwarg,
-#    the clean_reply() fallback fix below still protects you.
-try:
-    llm = ChatGroq(
-        model="qwen/qwen3.6-27b",
-        temperature=0.5,
-        max_tokens=1800,
-        reasoning_format="hidden",
-    )
-except Exception as _init_err:
-    print(f"[WARN] ChatGroq init with reasoning_format failed ({_init_err}), retrying without it.")
-    llm = ChatGroq(
-        model="qwen/qwen3.6-27b",
-        temperature=0.5,
-        max_tokens=1800,
-    )
+# MODEL: groq/compound-mini
+# Switched from qwen/qwen3.6-27b (a heavy reasoning model that was timing out
+# on Render's free tier — invoke was hanging ~30s+ before being killed).
+# groq/compound-mini is Groq's own optimised model: fast (~2s), reliable,
+# and produces fluent, natural prose — ideal for persona chat.
+llm = ChatGroq(
+    model="groq/compound-mini",
+    temperature=0.5,
+    max_tokens=1024,
+)
 
 
 # ─── Text Normalization ────────────────────────────────────────
