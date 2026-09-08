@@ -293,7 +293,7 @@ INTENT_FOCUS = {
     "skills": "Talk about your skills as a story, not a list. Describe where you're strongest, how your AI and full-stack skills connect, and give a concrete example of a skill applied in a real project. If you already covered the tech stack, go deeper — talk about your favourite tools and why.",
     "projects": "Pick the most relevant project, narrate it with context: what problem it solved, how you approached the hardest part, and what you learned. Be specific and proud. If you've already talked about one project, pivot to a different one.",
     "origin": "Share where you're based (Accra Newtown, Ghana) in context — weave in what it means to build tech from Ghana, or how your environment shapes your motivation. If that's already been said, add a fresh angle: the local tech scene, your family background, or what Ghana means to your vision.",
-    "education": "Tell the education story in a connected way: the path from Edwinase Ejisu Basic School (BECE, overall best in Kumasi 2020) → Achimota School (General Arts, 2021–2023) → UG Legon (CS/AI&ML, graduating 2027). If you've already covered the path, zoom into what you're studying now, a challenging course, or what excites you most in your coursework.",
+    "education": "Tell the education story as a vivid personal journey, not a résumé entry. Start with the milestone that defined your academic identity (BECE best student in Kumasi, 2020), then trace the path: Edwinase Ejisu Basic School → Achimota School General Arts (2021–2023) → University of Ghana, Legon, Computer Science / ML & AI Engineering, graduating October 2027. Use language that shows pride and momentum — talk about what each stage opened up for you. If you've already covered the full path, zoom into the present: a challenging course like stochastic optimization, what excites you most in your coursework, or how your academic work shapes the AI systems you build.",
     "hobbies": "Talk naturally about what you enjoy outside work: football, music while coding, reading AI papers, and your passion for conversations about tech's role in Africa. Let your personality come through — mention a specific thing rather than just listing.",
     "goals": "Paint a vivid picture of your vision: building equitable AI for African healthcare and education, growing as a researcher, and being part of the generation that proves world-class AI can come from Africa. If you've covered the big picture, get specific — a project you want to build, a paper you want to publish, a milestone you're chasing.",
     "contact": "Share contact details naturally: email christianagyapong2023@email.com, phone/WhatsApp +233557618362. Mention you're open to AI engineering contracts, freelance, research collaboration, and consulting.",
@@ -304,7 +304,7 @@ INTENT_FOCUS = {
 
 INTENT_FALLBACKS = {
     "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
-    "education": "Started at Edwinase Ejisu Basic School, where I passed the BECE as the overall best student in Kumasi in 2020. From there I went to Achimota School for SHS, studying General Arts from 2021 to 2023. Now I'm at the University of Ghana, Legon, pursuing Computer Science with a focus on Machine Learning and AI Engineering — graduating October 2027.",
+    "education": "Education has been one long upward climb that I'm genuinely proud of — I passed the BECE as the overall best student in Kumasi in 2020 at Edwinase Ejisu Basic School, which set the tone early. From there, Achimota School for General Arts (2021–2023) sharpened my analytical thinking, and now I'm at the University of Ghana, Legon, studying Computer Science on the Machine Learning and AI Engineering track — graduating October 2027. The coursework in stochastic optimization and neural network architecture has been the steepest challenge, but it directly shapes how I think about building reliable, data-efficient AI systems.",
     "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
     "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), and a TweetEval NLP classifier.",
     "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana, currently studying Computer Science at UG Legon.",
@@ -478,7 +478,7 @@ def clean_reply(text: str) -> str:
         "machine learning", "ai engineer", "background", "journey", "vision",
         "passion", "goal", "dream", "experience", "internship",
     ]
-    _max_sentences = 6 if any(w in text.lower() for w in _story_words) else 4
+    _max_sentences = 7 if any(w in text.lower() for w in _story_words) else 4
 
     if sentences:
         text = " ".join(sentences[:_max_sentences]).strip()
