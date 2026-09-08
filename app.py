@@ -208,16 +208,15 @@ if not api_key:
 try:
     llm = ChatGroq(
         model="qwen/qwen3.6-27b",
-        temperature=0.3,   # lower = less creative drift on factual personal-domain questions
+        temperature=0.5,
         max_tokens=1800,
-        reasoning_format="hidden",  # strip <think> server-side — eliminates reasoning latency
+        reasoning_format="hidden",
     )
-except Exception:
-    # Older langchain-groq versions don't accept reasoning_format as a direct param.
-    # Fall back without it — clean_reply() will still strip any <think> blocks client-side.
+except Exception as _init_err:
+    print(f"[WARN] ChatGroq init with reasoning_format failed ({_init_err}), retrying without it.")
     llm = ChatGroq(
         model="qwen/qwen3.6-27b",
-        temperature=0.3,
+        temperature=0.5,
         max_tokens=1800,
     )
 
@@ -790,40 +789,41 @@ def build_persona_response(user_question: str, chat_history):
             f" Do NOT invent, extrapolate, or add anything not present in the facts provided.\n"
         )
 
-    # ── Build message list with real history so the model SEES what it said ──
-    # The framing prompt (facts + focus) goes in the first HumanMessage so the
-    # model has the knowledge before it reads the conversation turns.
-    framing_text = (
+    # Build the message list.
+    # Keep token budget lean: system + one rich human message containing facts,
+    # compact history, and the current question.
+    # We previously injected alternating HumanMessage/AIMessage turns, but that
+    # inflated the prompt significantly and caused Groq token-limit failures.
+    # Compact history into the human message instead — the model still sees every
+    # prior turn, just formatted as labelled text rather than role alternation.
+
+    history_block = ""
+    if chat_history:
+        lines = []
+        for h, a in chat_history[-6:]:
+            lines.append(f"User: {h}")
+            lines.append(f"Chrix: {a}")
+        history_block = (
+            "\n\nRECENT CONVERSATION (do NOT repeat any sentence or phrase from Chrix's lines):\n"
+            + "\n".join(lines)
+        )
+
+    human_text = (
         "FOCUS FOR THIS REPLY:\n"
         f"{focus}\n"
         f"{follow_up_hint}\n"
-        "GROUNDING CONSTRAINT: The facts below are the ONLY source of truth. "
-        "Do NOT state any fact, number, date, company, project detail, or claim "
-        "that does not appear explicitly in the RELEVANT FACTS section. "
-        "If something is not there, say so naturally rather than inventing it.\n\n"
+        "GROUNDING CONSTRAINT: Only state facts present in the RELEVANT FACTS below. "
+        "If asked something not covered, say so naturally (e.g. 'That\'s not something I\'ve shared publicly').\n\n"
         "RELEVANT FACTS FROM YOUR LIFE:\n"
-        f"{context}\n\n"
-        "The conversation so far follows. Read it carefully — "
-        "NEVER repeat sentences, phrases, or structures you already used in any prior reply."
+        f"{context}"
+        f"{history_block}\n\n"
+        f"CURRENT MESSAGE: {user_question}"
     )
 
-    messages = [SystemMessage(content=SYSTEM_INSTRUCTIONS)]
-
-    # Inject up to the last 6 turns as real chat messages so the model truly
-    # sees its prior replies and is less likely to repeat itself.
-    history_turns = chat_history[-6:] if chat_history else []
-    if history_turns:
-        messages.append(HumanMessage(content=framing_text))
-        messages.append(AIMessage(content="Understood. I'll keep track of everything I've already said."))
-        for human_msg, ai_msg in history_turns:
-            messages.append(HumanMessage(content=str(human_msg)))
-            messages.append(AIMessage(content=str(ai_msg)))
-    else:
-        # No history yet — framing text is enough context
-        messages.append(HumanMessage(content=framing_text))
-
-    # Final user turn
-    messages.append(HumanMessage(content=user_question))
+    messages = [
+        SystemMessage(content=SYSTEM_INSTRUCTIONS),
+        HumanMessage(content=human_text),
+    ]
 
     try:
         print("[DEBUG] calling llm.invoke")
