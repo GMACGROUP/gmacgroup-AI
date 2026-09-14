@@ -3,51 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <meta name="theme-color" content="#080b12">
+    <meta name="theme-color" content="#080c18">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Chat with Chrix Tech — Christian Agyapong's personal AI. Ask about his background, projects, and goals in Computer Science & AI/ML.">
+    <meta name="description" content="Chat with Chrix Tech — Christian Agyapong's AI Persona. Explore projects, machine learning research, background, and skills.">
+    <meta name="author" content="Christian Agyapong">
 
-    <title>Chrix Tech | Personal AI</title>
+    <title>Chrix Tech | AI Persona</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 
-
-    <!-- Modern Fonts -->
-
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 </head>
 <body>
     <div class="app-container">
-        <!-- Background decorative blobs -->
-        <div class="blob blob-1" aria-hidden="true"></div>
-        <div class="blob blob-2" aria-hidden="true"></div>
-        <div class="blob blob-3" aria-hidden="true"></div>
+        <!-- Ambient Background Glow -->
+        <div class="bg-glow-wrapper" aria-hidden="true">
+            <div class="ambient-orb orb-1"></div>
+            <div class="ambient-orb orb-2"></div>
+            <div class="ambient-orb orb-3"></div>
+        </div>
 
+        <!-- Chat Main Container -->
         <div class="chat-wrapper" role="main">
-            <!-- Header -->
+            <!-- Header Bar -->
             <header class="chat-header">
-                <div class="profile-info">
+                <div class="profile-info" id="header-profile-info" role="button" tabindex="0" title="Click to view full bio & experience">
                     <div class="avatar-container">
                         <img src="{{ url_for('static', filename='avatar.jpg') }}"
-                             alt="Chrix Tech — Christian Agyapong"
-                             class="avatar">
-                        <div class="status-indicator" title="Online" aria-label="Online"></div>
+                             alt="Christian Agyapong"
+                             class="avatar-img">
+                        <span class="status-dot" title="Online" aria-label="Online"></span>
                     </div>
                     <div class="user-details">
-                        <h1 class="user-name">Chrix Tech</h1>
-                        <p class="user-title">Computer Science &amp; AI/ML Specialist</p>
+                        <div class="user-name-row">
+                            <h1 class="user-name">Christian Agyapong</h1>
+                            <span class="ai-badge">AI</span>
+                        </div>
+                        <p class="user-role">Computer Science &amp; AI/ML Specialist <span class="status-text">• Active</span></p>
                     </div>
                 </div>
+
                 <div class="header-actions">
-                    <button id="clear-btn" class="icon-button" title="Clear chat" aria-label="Clear chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button id="about-btn" class="icon-button" title="View Experience, Projects &amp; Bio" aria-label="View Bio">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                    <button id="clear-btn" class="icon-button" title="Clear conversation" aria-label="Clear chat">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 6h18"/>
                             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -56,54 +70,216 @@
                 </div>
             </header>
 
-            <!-- Messages -->
-            <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
-                <div class="message ai-message" id="initial-greeting-msg">
-                    <div class="message-content" id="initial-greeting-text"></div>
-                    <span class="message-time" aria-hidden="true">Just now</span>
-                </div>
+            <!-- Messages Stream Area -->
+            <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Messages">
+                <!-- Initial Welcome Message injected via JS -->
             </div>
 
-            <!-- Input area -->
+            <!-- Scroll-to-Bottom Floating Button -->
+            <button id="scroll-bottom-btn" class="scroll-bottom-btn hidden" aria-label="Scroll to bottom">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                <span>Latest</span>
+            </button>
+
+            <!-- Input & Suggestions Area -->
             <div class="chat-input-area">
-                <div class="suggestions" id="suggestions" role="list" aria-label="Suggested questions">
-                    <button class="suggestion-chip" role="listitem">What are your skills?</button>
-                    <button class="suggestion-chip" role="listitem">Tell me about your AI experience</button>
-                    <button class="suggestion-chip" role="listitem">What are your goals?</button>
+                <!-- Suggestions Carousel -->
+                <div class="suggestions-container">
+                    <div class="suggestions" id="suggestions" role="list" aria-label="Suggested prompts">
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">💼</span> What is your professional experience?
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">🤖</span> Tell me about your AI &amp; RAG work
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">🏥</span> What was your research at DISAL?
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">🎓</span> Walk me through your education
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">🚀</span> What projects have you built?
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">⚡</span> What is your tech stack?
+                        </button>
+                    </div>
                 </div>
 
-                <form id="chat-form" class="input-form" autocomplete="off" role="search" aria-label="Send a message">
-                    <div class="glass-input">
+                <!-- Input Form -->
+                <form id="chat-form" class="input-form" autocomplete="off" role="search" aria-label="Send message">
+                    <div class="glass-input-bar">
                         <input
                             type="text"
                             id="message-input"
-                            placeholder="Ask Chrix anything…"
+                            placeholder="Ask Chrix about his experience, AI models, projects, or background..."
                             autocomplete="off"
                             autocorrect="off"
                             spellcheck="true"
                             aria-label="Your message"
                             enterkeyhint="send"
                         >
-                        <button type="submit" id="send-btn" class="send-button" disabled aria-label="Send message">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2.2"
-                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <button type="submit" id="send-btn" class="send-button" disabled aria-label="Send message" title="Send (Enter)">
+                            <svg class="send-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"/>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                             </svg>
                         </button>
-                        <button type="button" id="stop-btn" class="stop-button hidden" aria-label="Stop generating">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                 fill="currentColor" stroke="none" aria-hidden="true">
-                                <rect x="6" y="6" width="12" height="12" rx="1"></rect>
-                            </svg>
+                        <button type="button" id="stop-btn" class="stop-button hidden" aria-label="Stop generating response" title="Stop generating">
+                            <span class="stop-square"></span>
                         </button>
                     </div>
                 </form>
+                <div class="input-footer-hint">
+                    <span>Chrix Persona AI Engine</span>
+                    <span class="hint-dot">•</span>
+                    <span>Press <kbd>Enter</kbd> to send</span>
+                </div>
             </div>
+        </div>
+
+        <!-- Bio & Experience Modal -->
+        <div id="bio-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-card">
+                <button id="modal-close-btn" class="modal-close-btn" aria-label="Close modal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="modal-header-section">
+                    <div class="modal-avatar-wrapper">
+                        <img src="{{ url_for('static', filename='avatar.jpg') }}" alt="Christian Agyapong" class="modal-avatar">
+                    </div>
+                    <div class="modal-name-group">
+                        <h3 id="modal-title" class="modal-name">Christian Agyapong</h3>
+                        <p class="modal-handle">@Chrix Tech • AI &amp; Software Engineer</p>
+                        <div class="modal-location-tag">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Accra Newtown, Ghana
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body-section">
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Summary</h4>
+                        <p class="section-text">
+                            AI Engineer, Full-Stack Developer, and researcher studying Computer Science (ML &amp; AI Engineering track) at the University of Ghana, Legon. Specializing in Retrieval-Augmented Generation (RAG), Deep Learning, Computer Vision, and scalable cloud solutions designed for real-world impact across Africa.
+                        </p>
+                    </div>
+
+                    <!-- Work Experience -->
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Professional Experience</h4>
+                        <ul class="timeline-list">
+                            <li>
+                                <strong>AI Engineer — ScaleUpBuild</strong>
+                                <span>Built business automation and RAG systems for intelligent document querying and customer support LLMs.</span>
+                            </li>
+                            <li>
+                                <strong>Machine Learning Intern — DISAL (Digital Health Solutions)</strong>
+                                <span>Healthcare AI research using MedGemma for skin disease detection on African skin tones; curated equitable datasets.</span>
+                            </li>
+                            <li>
+                                <strong>Full Stack Developer — DigitalWave Technologies</strong>
+                                <span>Built full-stack web applications, secure authentication, database schemas, and REST APIs from scratch.</span>
+                            </li>
+                            <li>
+                                <strong>UI/UX Designer &amp; QA Tester — King Of Glory Chapel</strong>
+                                <span>Designed church management system UI, user testing sessions, and responsive component design systems.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Key Projects -->
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Featured Projects</h4>
+                        <ul class="timeline-list">
+                            <li>
+                                <strong>AI WhatsApp Business Assistant</strong>
+                                <span>RAG system with semantic retrieval, memory, LangGraph, vector DB, and PostgreSQL.</span>
+                            </li>
+                            <li>
+                                <strong>African Skin Disease Detection System</strong>
+                                <span>Computer vision model using MedGemma to diagnose skin conditions on darker skin tones.</span>
+                            </li>
+                            <li>
+                                <strong>TweetEval NLP Moderation Model</strong>
+                                <span>3-class text classification (safe / neutral / offensive) using Hugging Face Transformers.</span>
+                            </li>
+                            <li>
+                                <strong>Christian.dev Portfolio Platform</strong>
+                                <span>Personal developer portfolio live at <a href="https://christiandetails.vercel.app/" target="_blank" rel="noopener" style="color:#38bdf8;">christiandetails.vercel.app</a>.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Academic Journey -->
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Education</h4>
+                        <ul class="timeline-list">
+                            <li>
+                                <strong>University of Ghana, Legon</strong> (Expected Oct 2027)
+                                <span>B.Sc. Computer Science • Machine Learning &amp; AI Track</span>
+                            </li>
+                            <li>
+                                <strong>Achimota School</strong> (2021 – 2023)
+                                <span>General Arts (Elective Math, Economics, Geography, Government)</span>
+                            </li>
+                            <li>
+                                <strong>Edwinase Ejisu Basic School</strong> (2020)
+                                <span>Overall Best BECE Student in Kumasi</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Core Stack -->
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Core Tech Stack</h4>
+                        <div class="tech-chips-grid">
+                            <span class="tech-chip">Python</span>
+                            <span class="tech-chip">PyTorch / TensorFlow</span>
+                            <span class="tech-chip">LangChain &amp; LangGraph</span>
+                            <span class="tech-chip">RAG &amp; Vector DBs</span>
+                            <span class="tech-chip">JavaScript / TypeScript</span>
+                            <span class="tech-chip">React &amp; Next.js</span>
+                            <span class="tech-chip">Node.js &amp; FastAPI</span>
+                            <span class="tech-chip">PostgreSQL &amp; MongoDB</span>
+                            <span class="tech-chip">Docker &amp; Cloud</span>
+                        </div>
+                    </div>
+
+                    <!-- Connect -->
+                    <div class="modal-section-block">
+                        <h4 class="section-label">Connect &amp; Contact</h4>
+                        <div class="social-links-row">
+                            <a href="mailto:christianagyapong2023@email.com" class="social-link-btn" target="_blank" rel="noopener noreferrer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                <span>Email Me</span>
+                            </a>
+                            <a href="https://github.com/ChristianAgyapong" class="social-link-btn" target="_blank" rel="noopener noreferrer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                                <span>GitHub</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Feedback Message -->
+        <div id="toast" class="toast hidden" role="status" aria-live="polite">
+            <span class="toast-icon">✓</span>
+            <span class="toast-text" id="toast-text">Copied to clipboard</span>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

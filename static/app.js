@@ -1,158 +1,56 @@
-document.addEventListener('DOMContentLoaded', () => {   
+/* ============================================================
+   CHRIX TECH AI PERSONA — CLIENT APPLICATION SCRIPT
+   Interactive AI Persona, Clean Layout, TTS Speech, Action Toolbar
+   ============================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const stopBtn = document.getElementById('stop-btn');
     const chatMessages = document.getElementById('chat-messages');
     const clearBtn = document.getElementById('clear-btn');
-    const suggestions = document.querySelectorAll('.suggestion-chip');
+    const aboutBtn = document.getElementById('about-btn');
+    const headerProfile = document.getElementById('header-profile-info');
+    const bioModal = document.getElementById('bio-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const suggestionsContainer = document.getElementById('suggestions');
+    const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
 
-    // Pool of opening greetings — one is picked at random each session
+    // Opening greetings pool
     const OPENING_GREETINGS = [
-        "Hey — I'm Chrix Tech. Ask me anything: my projects, stack, background, or availability.",
-        "What's up? I'm Christian Agyapong — AI engineer, full-stack dev, CS student at UG Legon. What would you like to explore?",
-        "Hey! Chrix here. Curious about my AI work, education, or freelance availability — where do you want to start?",
-        "Hi there — I'm Chrix Tech. Whether it's projects, skills, or hiring me, I'm an open book. Go ahead.",
-        "Hey — glad you're here. I'm Christian Agyapong. Ask me about what I've built, what I'm studying, or how to work with me.",
-        "What do you want to know? I'm Chrix Tech — AI engineer and developer based in Accra. Projects, stack, goals — pick one.",
+        "Hey! I'm Christian Agyapong — AI engineer, machine learning builder, and CS student at UG Legon. Ask me anything about my projects, research, stack, or how to work together!",
+        "What's up? I'm Christian's AI Persona (Chrix Tech). Curious about my BECE Kumasi record, Achimota journey, UG Legon AI track, or recent freelance work? Pick a topic!",
+        "Hello! I'm Chrix Tech. Whether you want to explore my RAG architectures, full-stack systems, educational background, or hire me for a build — I'm ready.",
+        "Hey there — welcome! I'm Christian Agyapong. Ask me about what I've built, my research in machine learning, or what drives my work in African tech.",
+        "Welcome! I'm Chrix Tech. From deep learning and stochastic optimization to real-world React & Node.js products — ask me anything!"
     ];
-    const _openingGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
 
-    // Inject the chosen greeting into the HTML placeholder bubble
-    const _greetingEl = document.getElementById('initial-greeting-text');
-    if (_greetingEl) _greetingEl.textContent = _openingGreeting;
+    const chosenGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
 
     // State
     let chatHistory = [
-        ["Hi", _openingGreeting]
+        ["Hi", chosenGreeting]
     ];
     let isWaitingForResponse = false;
     let abortController = new AbortController();
+    let toastTimeout = null;
+    let activeSpeakerBtn = null;
 
-    // Enable/disable send button based on input
-    messageInput.addEventListener('input', () => {
-        sendBtn.disabled = messageInput.value.trim() === '' || isWaitingForResponse;
-    });
+    // Avatar path
+    const AVATAR_URL = document.querySelector('.avatar-img')?.src || '/static/avatar.jpg';
 
-    // Handle suggestion clicks
-    suggestions.forEach(chip => {
-        chip.addEventListener('click', () => {
-            const text = chip.textContent;
-            messageInput.value = text;
-            sendBtn.disabled = false;
-            chatForm.dispatchEvent(new Event('submit'));
-        });
-    });
+    // ── Helper: Format Time ──
+    function getTimeLabel() {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-    clearBtn.addEventListener('click', () => {
-        const _resetGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
-        chatHistory = [
-            ["Hi", _resetGreeting]
-        ];
-        chatMessages.innerHTML = `
-            <div class="message ai-message">
-                <div class="message-content">${_resetGreeting}</div>
-                <span class="message-time" aria-hidden="true">Just now</span>
-            </div>
-        `;
-    });
-
-    // Form submission
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const messageText = messageInput.value.trim();
-        if (!messageText || isWaitingForResponse) return;
-
-        // Add user message to UI
-        addMessageToUI('user', messageText);
-        
-        // Clear input and state
-        messageInput.value = '';
-        sendBtn.disabled = true;
-        isWaitingForResponse = true;
-        
-        // Toggle buttons
-        sendBtn.classList.add('hidden');
-        stopBtn.classList.remove('hidden');
-
-        // Show typing indicator
-        const typingId = showTypingIndicator();
-
-        try {
-            // Reset abort controller
-            abortController = new AbortController();
-
-            // Send to API
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: messageText,
-                    history: chatHistory
-                }),
-                signal: abortController.signal
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const data = await response.json();
-            const aiReply = data.reply;
-            const newSuggestions = data.suggestions || [];
-
-            // Remove typing indicator
-            removeTypingIndicator(typingId);
-
-            // Add AI response to UI
-            addMessageToUI('ai', aiReply);
-
-            // Update history
-            chatHistory.push([messageText, aiReply]);
-
-            // Update suggestions UI
-            updateSuggestions(newSuggestions);
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('Fetch aborted by user.');
-                removeTypingIndicator(typingId);
-                addMessageToUI('ai', 'Generation stopped.');
-            } else {
-                console.error('Error:', error);
-                removeTypingIndicator(typingId);
-                addMessageToUI('ai', 'Oops, something went wrong connecting to the server. Please try again.');
-            }
-        } finally {
-            isWaitingForResponse = false;
-            
-            // Toggle buttons back
-            stopBtn.classList.add('hidden');
-            sendBtn.classList.remove('hidden');
-
-            // Re-enable send button if there's text
-            sendBtn.disabled = messageInput.value.trim() === '';
-
-            // Focus input if not on mobile
-            if (window.innerWidth > 768) {
-                messageInput.focus();
-            }
-        }
-    });
-
-    // Stop generation
-    stopBtn.addEventListener('click', () => {
-        if (isWaitingForResponse) {
-            abortController.abort();
-        }
-    });
-
-    // Helpers
+    // ── Helper: Escape HTML ──
     function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g, 
+        return (str || '').replace(/[&<>'"]/g, 
             tag => ({
                 '&': '&amp;',
                 '<': '&lt;',
@@ -163,52 +61,328 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    function urlify(text) {
-        const escaped = escapeHTML(text);
-        // Match URLs but exclude trailing punctuation like periods or commas
-        const urlRegex = /(https?:\/\/[^\s]+[^\s.,;:!?'"()])/g;
-        return escaped.replace(urlRegex, function(url) {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #58a6ff; text-decoration: underline;">${url}</a>`;
+    // ── Rich Markdown Parser ──
+    function renderMarkdown(rawText) {
+        if (!rawText) return '';
+
+        // Extract code blocks first
+        const codeBlocks = [];
+        let text = rawText.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+            const index = codeBlocks.length;
+            codeBlocks.push({ lang: lang || 'code', code: code.trim() });
+            return `__CODE_BLOCK_${index}__`;
+        });
+
+        text = escapeHTML(text);
+
+        // Inline code `code`
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Bold **text** or __text__
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+        // Italic *text* or _text_
+        text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+        // Autolink URLs
+        const urlRegex = /(https?:\/\/[^\s<]+[^\s.,;:!?'"()<>])/g;
+        text = text.replace(urlRegex, (url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+
+        // Lists & paragraphs
+        const lines = text.split('\n');
+        let inList = false;
+        let formattedLines = [];
+
+        for (let line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+                if (!inList) {
+                    formattedLines.push('<ul>');
+                    inList = true;
+                }
+                formattedLines.push(`<li>${trimmed.substring(2)}</li>`);
+            } else {
+                if (inList) {
+                    formattedLines.push('</ul>');
+                    inList = false;
+                }
+                if (trimmed.length > 0) {
+                    formattedLines.push(`<p>${line}</p>`);
+                }
+            }
+        }
+        if (inList) formattedLines.push('</ul>');
+        let htmlResult = formattedLines.join('');
+
+        // Re-inject code blocks
+        htmlResult = htmlResult.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+            const item = codeBlocks[parseInt(index, 10)];
+            const safeCode = escapeHTML(item.code);
+            return `
+                <div class="code-block-wrapper">
+                    <div class="code-block-header">
+                        <span>${escapeHTML(item.lang)}</span>
+                        <button class="copy-code-btn" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(item.code)}')); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1800);">Copy</button>
+                    </div>
+                    <pre><code>${safeCode}</code></pre>
+                </div>
+            `;
+        });
+
+        return htmlResult;
+    }
+
+    // ── Text-to-Speech (TTS) ──
+    function stopCurrentSpeech() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        if (activeSpeakerBtn) {
+            activeSpeakerBtn.classList.remove('active-speaker');
+            activeSpeakerBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <span>Listen</span>
+            `;
+            activeSpeakerBtn = null;
+        }
+    }
+
+    function toggleSpeakText(text, btn) {
+        if (!('speechSynthesis' in window)) {
+            showToast("Speech synthesis not supported in this browser.");
+            return;
+        }
+
+        if (activeSpeakerBtn === btn) {
+            stopCurrentSpeech();
+            return;
+        }
+
+        stopCurrentSpeech();
+
+        const cleanSpeechText = text
+            .replace(/https?:\/\/\S+/g, '')
+            .replace(/[`*_#>-]/g, '')
+            .trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        btn.classList.add('active-speaker');
+        btn.innerHTML = `
+            <span class="tts-wave-bar"></span>
+            <span class="tts-wave-bar"></span>
+            <span class="tts-wave-bar"></span>
+            <span>Playing</span>
+        `;
+        activeSpeakerBtn = btn;
+
+        utterance.onend = stopCurrentSpeech;
+        utterance.onerror = stopCurrentSpeech;
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // ── Toast Notification ──
+    function showToast(message) {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastText.textContent = message;
+        toast.classList.remove('hidden');
+        toastTimeout = setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 2200);
+    }
+
+    // ── Scroll to Bottom ──
+    function scrollToBottom(smooth = true) {
+        chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
         });
     }
 
-    function getTimeLabel() {
-        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+    chatMessages.addEventListener('scroll', () => {
+        const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+        if (distanceFromBottom > 140) {
+            scrollBottomBtn.classList.remove('hidden');
+        } else {
+            scrollBottomBtn.classList.add('hidden');
+        }
+    });
 
+    scrollBottomBtn.addEventListener('click', () => {
+        scrollToBottom(true);
+    });
+
+    // ── Add Message To UI ──
     function addMessageToUI(sender, text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
+        const row = document.createElement('div');
+        row.className = `message-row ${sender}-row`;
 
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        contentDiv.innerHTML = urlify(text);
+        const timeStr = getTimeLabel();
 
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'message-time';
-        timeSpan.setAttribute('aria-hidden', 'true');
-        timeSpan.textContent = getTimeLabel();
+        if (sender === 'ai') {
+            row.innerHTML = `
+                <div class="msg-avatar-col">
+                    <img src="${AVATAR_URL}" alt="Christian Agyapong" class="msg-avatar-img">
+                </div>
+                <div class="message-bubble-wrap">
+                    <div class="msg-header-info">
+                        <span class="msg-sender-name">Christian Agyapong</span>
+                        <span class="msg-ai-pill">AI</span>
+                        <span class="msg-time">${timeStr}</span>
+                    </div>
+                    <div class="message-bubble">
+                        ${renderMarkdown(text)}
+                    </div>
+                    <div class="msg-actions-toolbar">
+                        <button class="msg-action-btn copy-msg-btn" title="Copy response to clipboard">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
+                        <button class="msg-action-btn speak-msg-btn" title="Listen to response aloud">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            </svg>
+                            <span>Listen</span>
+                        </button>
+                    </div>
+                </div>
+            `;
 
-        messageDiv.appendChild(contentDiv);
-        messageDiv.appendChild(timeSpan);
-        chatMessages.appendChild(messageDiv);
-        scrollToBottom();
+            const copyBtn = row.querySelector('.copy-msg-btn');
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("Response copied to clipboard");
+                    copyBtn.innerHTML = `
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span style="color:#10b981">Copied!</span>
+                    `;
+                    setTimeout(() => {
+                        copyBtn.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy</span>
+                        `;
+                    }, 1800);
+                });
+            });
+
+            const speakBtn = row.querySelector('.speak-msg-btn');
+            speakBtn.addEventListener('click', () => {
+                toggleSpeakText(text, speakBtn);
+            });
+
+        } else {
+            row.innerHTML = `
+                <div class="message-bubble-wrap">
+                    <div class="msg-header-info">
+                        <span class="msg-time">${timeStr}</span>
+                        <span class="msg-sender-name">You</span>
+                    </div>
+                    <div class="message-bubble">
+                        ${renderMarkdown(text)}
+                    </div>
+                </div>
+            `;
+        }
+
+        chatMessages.appendChild(row);
+        scrollToBottom(true);
     }
 
+    // Initialize with the chosen opening greeting
+    addMessageToUI('ai', chosenGreeting);
+
+    // ── Suggestion Chips Handler ──
+    function bindSuggestionChips() {
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.onclick = () => {
+                const text = chip.innerText.replace(/^[^\w\s]+/, '').trim();
+                messageInput.value = text;
+                sendBtn.disabled = false;
+                chatForm.dispatchEvent(new Event('submit'));
+            };
+        });
+    }
+    bindSuggestionChips();
+
+    // ── Input & Send Button State ──
+    messageInput.addEventListener('input', () => {
+        sendBtn.disabled = messageInput.value.trim() === '' || isWaitingForResponse;
+    });
+
+    // ── Clear Chat ──
+    clearBtn.addEventListener('click', () => {
+        const resetGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+        chatHistory = [["Hi", resetGreeting]];
+        stopCurrentSpeech();
+        chatMessages.innerHTML = '';
+        addMessageToUI('ai', resetGreeting);
+        showToast("Conversation cleared");
+    });
+
+    // ── Bio Modal ──
+    function openModal() { bioModal.classList.remove('hidden'); }
+    function closeModal() { bioModal.classList.add('hidden'); }
+
+    if (aboutBtn) aboutBtn.addEventListener('click', openModal);
+    if (headerProfile) headerProfile.addEventListener('click', openModal);
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    if (bioModal) {
+        bioModal.addEventListener('click', (e) => {
+            if (e.target === bioModal) closeModal();
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !bioModal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+
+    // ── Typing Indicator ──
     function showTypingIndicator() {
         const id = 'typing-' + Date.now();
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message ai-message';
-        typingDiv.id = id;
-        
-        typingDiv.innerHTML = `
-            <div class="message-content">
-                <div class="spinner"></div>
+        const row = document.createElement('div');
+        row.className = 'message-row ai-row';
+        row.id = id;
+
+        row.innerHTML = `
+            <div class="msg-avatar-col">
+                <img src="${AVATAR_URL}" alt="Christian Agyapong" class="msg-avatar-img">
+            </div>
+            <div class="message-bubble-wrap">
+                <div class="typing-bubble">
+                    <span>Thinking</span>
+                    <div class="typing-dots">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
             </div>
         `;
-        
-        chatMessages.appendChild(typingDiv);
-        scrollToBottom();
+
+        chatMessages.appendChild(row);
+        scrollToBottom(true);
         return id;
     }
 
@@ -217,42 +391,105 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) el.remove();
     }
 
-    function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    // Handle mobile keyboard appearance cleanly
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            scrollToBottom();
-        });
-        window.visualViewport.addEventListener('scroll', () => {
-            // Keep window anchored at top
-            if (window.scrollY !== 0) {
-                window.scrollTo(0, 0);
-            }
-        });
-    }
-
-    // Scroll to bottom when focusing the input on mobile
-    messageInput.addEventListener('focus', () => {
-        setTimeout(scrollToBottom, 250);
-    });
-
+    // ── Update Suggestions ──
     function updateSuggestions(newSuggestions) {
-        const suggestionsContainer = document.getElementById('suggestions');
-        suggestionsContainer.innerHTML = ''; // Clear old suggestions
-        
-        newSuggestions.forEach(text => {
+        if (!newSuggestions || newSuggestions.length === 0) return;
+
+        const iconMap = ['⚡', '🧠', '🎓', '🚀', '💼', '💡'];
+        suggestionsContainer.innerHTML = '';
+
+        newSuggestions.forEach((text, i) => {
             const chip = document.createElement('button');
             chip.className = 'suggestion-chip';
-            chip.textContent = text;
-            chip.addEventListener('click', () => {
-                messageInput.value = text;
-                sendBtn.disabled = false;
-                chatForm.dispatchEvent(new Event('submit'));
-            });
+            chip.setAttribute('role', 'listitem');
+            const icon = iconMap[i % iconMap.length];
+            chip.innerHTML = `<span class="chip-icon">${icon}</span> ${escapeHTML(text)}`;
             suggestionsContainer.appendChild(chip);
         });
+
+        bindSuggestionChips();
     }
+
+    // ── Form Submission ──
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const messageText = messageInput.value.trim();
+        if (!messageText || isWaitingForResponse) return;
+
+        addMessageToUI('user', messageText);
+
+        messageInput.value = '';
+        sendBtn.disabled = true;
+        isWaitingForResponse = true;
+
+        sendBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+
+        const typingId = showTypingIndicator();
+
+        try {
+            abortController = new AbortController();
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: messageText,
+                    history: chatHistory
+                }),
+                signal: abortController.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiReply = data.reply || "I couldn't process that response.";
+            const newSuggestions = data.suggestions || [];
+
+            removeTypingIndicator(typingId);
+            addMessageToUI('ai', aiReply);
+
+            chatHistory.push([messageText, aiReply]);
+            updateSuggestions(newSuggestions);
+
+        } catch (error) {
+            removeTypingIndicator(typingId);
+            if (error.name === 'AbortError') {
+                addMessageToUI('ai', '_Response generation stopped._');
+            } else {
+                console.error('Chat API Error:', error);
+                addMessageToUI('ai', 'Oops, something went wrong connecting to the backend. Please try again.');
+            }
+        } finally {
+            isWaitingForResponse = false;
+            stopBtn.classList.add('hidden');
+            sendBtn.classList.remove('hidden');
+            sendBtn.disabled = messageInput.value.trim() === '';
+
+            if (window.innerWidth > 768) {
+                messageInput.focus();
+            }
+        }
+    });
+
+    // ── Stop Button ──
+    stopBtn.addEventListener('click', () => {
+        if (isWaitingForResponse) {
+            abortController.abort();
+        }
+    });
+
+    // ── Mobile Viewport ──
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            scrollToBottom(false);
+        });
+    }
+
+    messageInput.addEventListener('focus', () => {
+        setTimeout(() => scrollToBottom(false), 250);
+    });
 });

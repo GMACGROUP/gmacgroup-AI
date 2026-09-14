@@ -3,6 +3,9 @@
 # Flask backend for chat UI
 # ============================================================
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 from langchain_community.retrievers import BM25Retriever
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -180,6 +183,12 @@ retriever.k = 6  # Retrieve top-6 chunks for richer, more complete context per q
 education_retriever = BM25Retriever.from_documents(all_docs)
 education_retriever.k = 9
 
+# Experience-specific retriever with higher k — experience queries span 4 roles
+# (ScaleUpBuild, DISAL, DigitalWave, King Of Glory) and BM25 needs more chunks
+# to reliably surface all of them in one pass.
+experience_retriever = BM25Retriever.from_documents(all_docs)
+experience_retriever.k = 9
+
 
 # ─── LLM ─────────────────────────────────────────────────────
 api_key = os.environ.get("GROQ_API_KEY")
@@ -238,38 +247,29 @@ def normalize_text(text: str) -> str:
 
 
 # ─── Intent Detection ────────────────────────────────────────
+# ─── Intent Detection ────────────────────────────────────────
 INTENT_MAP = {
     "introduction": ["introduce", "who are you", "tell me about yourself", "your name", "what do you do"],
-    "skills": ["skills", "experience", "work", "job", "internship", "design", "coding", "programming", "stack", "technologies", "software engineer", "software engineering", "developer", "full stack", "backend", "frontend", "ai engineer", "machine learning"],
+    "tech_stack": [
+        "tech stack", "stack", "technologies", "technology", "tools",
+        "programming languages", "languages", "frameworks", "framework",
+        "what do you code in", "what do you use to code", "what tech do you use",
+        "what is your stack", "what's your stack", "skills", "what are your skills",
+        "coding skills", "programming skills", "technical skills", "ai stack", "ml stack"
+    ],
+    "experience": [
+        "experience", "work history", "job", "jobs", "internship", "intern",
+        "scaleupbuild", "disal", "digitalwave", "king of glory", "career",
+        "role", "roles", "responsibility", "responsibilities", "professional experience",
+        "work experience", "where have you worked", "previous work", "work background"
+    ],
     "projects": ["project", "projects", "portfolio", "built", "system", "platform", "app", "whatsapp assistant", "skin disease", "nlp", "tweeteval"],
     "origin": ["where are you from", "where are u from", "where r u from", "where do you live", "where do u live", "location", "country", "based", "ghana", "accra", "newtown", "accra newtown", "hometown", "where did you grow up", "childhood", "from where", "where u from"],
     "education": [
-        "studying",
-        "study",
-        "school",
-        "university",
-        "college",
-        "degree",
-        "major",
-        "education",
-        "academic",
-        "studies",
-        "shs",
-        "jhs",
-        "high school",
-        "basic school",
-        "coursework",
-        "courses",
-        "senior high school",
-        "junior high school",
-        "legon",
-        "achimota",
-        "edwinase",
-        "bece",
-        "graduated",
-        "graduate",
-        "gpa",
-        "year",
+        "studying", "study", "school", "university", "college", "degree", "major",
+        "education", "academic", "studies", "shs", "jhs", "high school", "basic school",
+        "coursework", "courses", "senior high school", "junior high school",
+        "legon", "achimota", "edwinase", "bece", "graduated", "graduate", "gpa", "year"
     ],
     "hobbies": ["hobbies", "hobby", "free time", "leisure", "outside school", "football", "music", "fun", "relax", "pastime"],
     "goals": ["goal", "goals", "dream", "ambition", "vision", "future", "plan", "aspiration", "next steps"],
@@ -289,7 +289,8 @@ GREETING_NO_QUESTION_RE = re.compile(r"^(hey|hi|hello|howdy)\b[\s!?.]*$", re.IGN
 
 INTENT_FOCUS = {
     "introduction": "Introduce yourself naturally as Christian Agyapong (Chrix Tech) — weave together who you are, what you do, and why in 3–4 connected sentences. If you've already introduced yourself in this conversation, skip the intro, pick one fresh angle (a project, a goal, your Ghana roots), and invite them to dig deeper.",
-    "skills": "Talk about your skills as a story, not a list. Describe where you're strongest, how your AI and full-stack skills connect, and give a concrete example of a skill applied in a real project. If you already covered the tech stack, go deeper — talk about your favourite tools and why.",
+    "tech_stack": "Present your technical stack with precision and pride, leading clearly with your primary focus in AI and Machine Learning: Python (primary language), PyTorch, TensorFlow, LangChain, LangGraph, Hugging Face Transformers, RAG architectures, Computer Vision, and NLP. Then highlight how you pair that with full-stack development: FastAPI, Node.js, Express, React, Next.js, React Native, TypeScript, PostgreSQL, MongoDB, Docker, and Cloud (Firebase, GCP, AWS). Emphasize that your core strength is bridging AI models with production software systems.",
+    "experience": "Narrate your professional experience across your key roles from the RELEVANT FACTS: AI Engineer at ScaleUpBuild (developing RAG systems and business automation solutions), Machine Learning Intern at DISAL (healthcare AI research using MedGemma for African skin disease detection), Full Stack Developer at DigitalWave (building full-stack web applications and APIs), and UI/UX & QA at King Of Glory Chapel. Highlight how your experience bridges research and production.",
     "projects": "Pick the most relevant project, narrate it with context: what problem it solved, how you approached the hardest part, and what you learned. Be specific and proud. If you've already talked about one project, pivot to a different one.",
     "origin": "Share where you're based (Accra Newtown, Ghana) in context — weave in what it means to build tech from Ghana, or how your environment shapes your motivation. If that's already been said, add a fresh angle: the local tech scene, your family background, or what Ghana means to your vision.",
     "education": "Tell the education story as a vivid personal journey, not a résumé entry. Start with the milestone that defined your academic identity (BECE best student in Kumasi, 2020), then trace the path: Edwinase Ejisu Basic School → Achimota School General Arts (2021–2023) → University of Ghana, Legon, Computer Science / ML & AI Engineering, graduating October 2027. Use language that shows pride and momentum — talk about what each stage opened up for you. If you've already covered the full path, zoom into the present: a challenging course like stochastic optimization, what excites you most in your coursework, or how your academic work shapes the AI systems you build.",
@@ -304,8 +305,9 @@ INTENT_FOCUS = {
 INTENT_FALLBACKS = {
     "origin": "I'm based in Accra Newtown, Ghana, where I'm currently studying and building software and AI solutions.",
     "education": "Education has been one long upward climb that I'm genuinely proud of — I passed the BECE as the overall best student in Kumasi in 2020 at Edwinase Ejisu Basic School, which set the tone early. From there, Achimota School for General Arts (2021–2023) sharpened my analytical thinking, and now I'm at the University of Ghana, Legon, studying Computer Science on the Machine Learning and AI Engineering track — graduating October 2027. The coursework in stochastic optimization and neural network architecture has been the steepest challenge, but it directly shapes how I think about building reliable, data-efficient AI systems.",
-    "skills": "I work across full-stack software development (React, Node.js, Python, PostgreSQL) and AI engineering (RAG systems, LLMs, computer vision).",
-    "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), and a TweetEval NLP classifier.",
+    "tech_stack": "My primary stack centers on AI & Machine Learning: Python, PyTorch, TensorFlow, LangChain, LangGraph, Hugging Face, and RAG architectures; complemented by full-stack engineering tools like FastAPI, Node.js, React, Next.js, TypeScript, PostgreSQL, MongoDB, Docker, and Cloud platforms.",
+    "experience": "I've worked as an AI Engineer at ScaleUpBuild building RAG and business automation systems, an ML Intern at DISAL researching skin disease detection with MedGemma for African patients, a Full Stack Developer at DigitalWave building production web apps, and a UI/UX Designer & QA Tester at King Of Glory Chapel.",
+    "projects": "I've built an AI WhatsApp Business Assistant (RAG-powered), an African Skin Disease Detection System (MedGemma-based), a TweetEval NLP classifier, and my personal portfolio at https://christiandetails.vercel.app/.",
     "introduction": "I'm Christian Agyapong (Chrix Tech), an AI engineer and full-stack developer based in Accra Newtown, Ghana, currently studying Computer Science at UG Legon.",
     "hobbies": "Outside of coding, I love playing football, listening to music, and reading emerging AI research papers.",
     "goals": "What drives me is the space between a raw idea and working intelligent software — I want to be the engineer who can consistently close that gap, for any domain, any problem. In the near term that means shipping sharper AI systems and going deeper on architecture and model design. Long-term, it's about building AI that makes a measurable difference — in African healthcare, in education access, in business automation — and growing as a researcher who contributes to the global AI conversation from an African perspective. The ambition is simple: prove that world-class AI can be built in Africa, and that African engineers can lead at the frontier of general AI.",
@@ -317,7 +319,8 @@ INTENT_FALLBACKS = {
 
 INTENT_SUGGESTIONS = {
     "introduction": ["What projects have you built?", "What is your tech stack?", "What are your goals?"],
-    "skills": ["Tell me about your AI projects", "What frameworks do you use most?", "Can you build something for me?"],
+    "tech_stack": ["Tell me about your AI & RAG work", "What projects have you built with PyTorch?", "How can we work together?"],
+    "experience": ["What did you build at ScaleUpBuild?", "Tell me about your research at DISAL", "What is your tech stack?"],
     "projects": ["How does the RAG system work?", "What stack did you use?", "What was the hardest technical challenge?"],
     "origin": ["What's it like building tech in Ghana?", "Where are you based now?", "What motivates you?"],
     "education": ["What are you studying right now?", "What excites you most about AI/ML?", "When do you graduate?"],
@@ -476,8 +479,10 @@ def clean_reply(text: str) -> str:
         "ghana", "accra", "africa", "healthcare", "education", "research",
         "machine learning", "ai engineer", "background", "journey", "vision",
         "passion", "goal", "dream", "experience", "internship",
+        "work", "career", "professional", "industrial", "role",
+        "king of glory", "automation", "engineer", "developer",
     ]
-    _max_sentences = 7 if any(w in text.lower() for w in _story_words) else 4
+    _max_sentences = 8 if any(w in text.lower() for w in _story_words) else 4
 
     if sentences:
         text = " ".join(sentences[:_max_sentences]).strip()
@@ -549,51 +554,45 @@ def detect_intent(question: str) -> str:
 
 
 SYSTEM_INSTRUCTIONS = (
+    # ── IDENTITY (strongest position — top of prompt) ──
     "You are Christian Agyapong, known professionally as Chrix Tech — an AI engineer, ML engineer, "
     "full-stack developer, and Computer Science student at the University of Ghana, Legon, based in Accra Newtown, Ghana. "
     "Speak in first person ('I', 'my', 'me') at all times. Be warm, confident, and conversational — "
     "like an engineer telling their story over coffee, not reciting a r\u00e9sum\u00e9. "
-
-    "RESPONSE LENGTH & FLOW: "
-    "For background / personal questions (education, experience, journey, goals, values), write 3\u20135 flowing, "
-    "connected sentences that tell a mini-story \u2014 not a bulleted list, not a single clipped sentence. "
-    "For simple factual questions (location, contact, links), 1\u20132 sentences is fine. "
-    "Always end naturally \u2014 no hollow closings like 'Let me know if you'd like to explore more.' "
-
-    "GROUNDING RULES (HIGHEST PRIORITY \u2014 NEVER VIOLATE): "
-    "You may ONLY state facts that appear explicitly in the RELEVANT FACTS block provided in each message. "
-    "Never invent, guess, or extrapolate: no made-up GPA, grades, salary, publication titles, "
-    "project metrics, company details, exact dates, or any other specific fact not present in the context. "
-    "If someone asks something not covered in the facts (e.g., 'What is your GPA?', 'Have you published papers?', "
-    "'What did you earn?'), respond honestly and naturally \u2014 for example: "
-    "'That's not something I've shared publicly' or 'I haven't detailed that here, but I can tell you about [related topic].' "
-    "Do NOT say 'I don't know' or 'I have no information' \u2014 say it naturally as a person would. "
-    "If you are uncertain whether a fact is in the context, do not state it \u2014 omit it or redirect. "
-
-    "ANTI-REPETITION (CRITICAL \u2014 YOU MUST FOLLOW THIS): "
-    "The conversation history is injected as real chat messages above. "
-    "Read every prior AI message carefully before writing your reply. "
-    "NEVER copy, paraphrase, or structurally mirror any sentence you have already said. "
-    "If you catch yourself starting with the same subject or phrase as a previous reply, rewrite it from a different angle. "
-    "Vary sentence starters \u2014 avoid opening three replies in a row with 'I', 'My', or the same verb. "
-    "If the user follows up ('tell me more', 'and then?', 'what else?'), "
-    "add a genuinely new fact or angle \u2014 never re-summarise what you already said. "
-
-    "PERSONALITY & DEPTH: "
-    "You are proud of your journey \u2014 from passing BECE as the overall best student in Kumasi, "
+    "You are proud of your journey — from passing BECE as the overall best student in Kumasi, "
     "to Achimota School, to now building AI at UG Legon. "
-    "You genuinely care about equitable AI for Africa \u2014 especially in healthcare and education. "
-    "You bridge research and real products; you love football, music while coding, and reading AI papers. "
-    "Let that personality come through naturally, not by announcing it. "
+    "You genuinely care about equitable AI for Africa. Let that come through naturally. "
 
-    "STYLE RULES: "
-    "No Ghanaian slang: avoid chale, herh, abeg, naa, mehn, vibe, what's popping. "
-    "If asked for certificates or links, provide the exact URLs from your profile. "
-    "Never emit reasoning blocks like <think>...</think>. "
-    "Never start a reply with 'Certainly', 'Absolutely', 'Of course', or 'Sure,'. "
+    # ── GROUNDING (highest-priority rule — firm and short) ──
+    "GROUNDING (HIGHEST PRIORITY): "
+    "ONLY state facts that appear in the RELEVANT FACTS block. "
+    "Never invent details \u2014 no made-up GPA, grades, salary, publication titles, project metrics, "
+    "tool choices, system architectures, or any specifics not explicitly in the facts. "
+    "EXAMPLE OF WHAT NOT TO DO: if the facts say you worked at DISAL on skin disease detection, "
+    "do NOT invent that you 'built a transformer-based predictor' or 'containerized it with Docker' "
+    "unless those exact details are in the facts. "
+    "If asked something not covered, say it naturally: "
+    "'That's not something I've shared publicly' or 'I can tell you about [related topic] instead.' "
+
+    # ── RESPONSE STYLE ──
+    "RESPONSE STYLE: "
+    "For technical questions (RAG, MedGemma, LangGraph, computer vision, transformers, stochastic optimization, full-stack), "
+    "explain with sharp engineering clarity, practical architectural depth, and authentic insight grounded in your actual work. "
+    "For background questions (education, experience, goals), write 3–5 flowing sentences that tell a mini-story. "
+    "For factual questions (location, contact, links), 1–2 sentences is fine. "
+    "End naturally — no hollow closings like 'Let me know if you'd like to explore more.' "
+
+    # ── ANTI-REPETITION ──
+    "ANTI-REPETITION: "
+    "Read every prior Chrix message in the conversation history. "
+    "Never copy, paraphrase, or mirror any sentence you already said. "
+    "If the user follows up, add a genuinely new fact \u2014 never re-summarise. "
+    "Vary sentence starters. "
+
+    # ── STYLE RULES (kept short — clean_reply() handles most enforcement) ──
+    "STYLE: If asked for certificates or links, provide the exact URLs from your profile. "
+    "Never emit reasoning blocks. "
 )
-
-
 
 
 def _last_ai_reply(chat_history):
@@ -729,12 +728,22 @@ def build_persona_response(user_question: str, chat_history):
 
 
 
-    # Help the retriever by biasing queries toward the right KB section.
+    # Help the retriever by biasing queries toward the right KB section with deep domain intelligence.
     query = user_question
-    if any(k in q_norm for k in ["experience", "work", "company", "job", "intern", "software engineer", "software engineering", "developer", "full stack"]):
-        query = f"professional experience software engineering full stack projects responsibilities {user_question}"
+    if any(k in q_norm for k in ["whatsapp", "rag", "langgraph", "vector db", "retrieval augmented"]):
+        query = f"AI WhatsApp Business Assistant RAG semantic search LangGraph vector database PostgreSQL Firebase business automation {user_question}"
+    elif any(k in q_norm for k in ["medgemma", "skin", "disease", "dermatol", "healthcare", "disal", "medical", "dark skin"]):
+        query = f"African Skin Disease Detection System MedGemma DISAL computer vision healthcare AI African patient underrepresentation dataset equity {user_question}"
+    elif any(k in q_norm for k in ["tweeteval", "hate speech", "moderation", "classification", "hugging face", "transformer"]):
+        query = f"TweetEval NLP classification Hugging Face Transformers text moderation safe neutral offensive {user_question}"
+    elif any(k in q_norm for k in ["stochastic", "optimization", "neural architecture", "math", "theory", "algorithms", "coursework"]):
+        query = f"stochastic optimization neural network architecture deep learning algorithms probability linear algebra University of Ghana Legon {user_question}"
+    elif any(k in q_norm for k in ["project", "projects", "built", "apps", "systems"]):
+        query = f"projects built AI WhatsApp Business Assistant African Skin Disease Detection TweetEval Portfolio {user_question}"
+    elif any(k in q_norm for k in ["experience", "work", "company", "job", "intern", "software engineer", "software engineering", "developer", "full stack", "industrial", "career", "role", "responsibility", "professional"]):
+        query = f"professional experience AI Engineer ScaleUpBuild DISAL DigitalWave King Of Glory software engineering full stack responsibilities internship {user_question}"
     elif any(k in q_norm for k in ["skill", "skills", "tech stack", "technology", "tools", "programming", "languages", "framework"]):
-        query = f"technical skills programming languages frontend backend databases cloud AI frameworks {user_question}"
+        query = f"technical skills programming languages frontend backend databases cloud AI frameworks PyTorch FastAPI React Nextjs PostgreSQL {user_question}"
     elif any(k in q_norm for k in ["junior high school", "jhs", "basic school", "edwinase", "bece"]):
         query = f"Edwinase Ejisu Basic School JHS BECE best student Kumasi {user_question}"
     elif any(k in q_norm for k in ["senior high school", "shs", "achimota", "high school", "secondary", "general arts"]):
@@ -747,8 +756,8 @@ def build_persona_response(user_question: str, chat_history):
         query = f"certifications AWS Udemy Credly badges credentials {user_question}"
     elif any(k in q_norm for k in ["research", "paper", "multimodal", "agentic", "responsible"]):
         query = f"research interests multimodal healthcare educational AI RAG responsible AI {user_question}"
-    elif any(k in q_norm for k in ["contact", "reach", "email", "phone", "whatsapp", "hire", "freelance"]):
-        query = f"contact email phone WhatsApp availability freelance Christian Agyapong {user_question}"
+    elif any(k in q_norm for k in ["contact", "reach", "email", "phone", "whatsapp", "hire", "freelance", "collaborat", "consulting"]):
+        query = f"contact email phone WhatsApp availability freelance contracts consulting Christian Agyapong {user_question}"
     elif any(k in q_norm for k in ["portfolio", "github", "linkedin"]):
         query = f"portfolio github links {user_question}"
     elif is_follow_up and last_topic:
@@ -757,7 +766,16 @@ def build_persona_response(user_question: str, chat_history):
 
     # Use the wider education retriever for education queries so all three
     # school levels (JHS / SHS / UG) are reliably surfaced in one pass.
-    active_retriever = education_retriever if intent == "education" else retriever
+    # Use boosted retrievers for education and experience queries so all
+    # relevant entries (3 school levels / 4 work roles) are surfaced.
+    _experience_keywords = {"experience", "work", "company", "job", "intern",
+                            "industrial", "career", "role", "professional"}
+    if intent == "education":
+        active_retriever = education_retriever
+    elif any(k in q_norm for k in _experience_keywords):
+        active_retriever = experience_retriever
+    else:
+        active_retriever = retriever
     relevant_docs = active_retriever.invoke(query)
     context = format_docs(relevant_docs)
 
@@ -823,7 +841,7 @@ def build_persona_response(user_question: str, chat_history):
         suggestions = INTENT_SUGGESTIONS.get(intent, INTENT_SUGGESTIONS["general"])
         fallback_msg = INTENT_FALLBACKS.get(intent, FALLBACK_REPLY)
         return fallback_msg, random.sample(suggestions, min(3, len(suggestions)))
-
+ 
     if REASONING_TAG_RE.search(reply):
         print("[WARN] Raw model output contained a reasoning tag before cleaning.")
 
@@ -862,4 +880,8 @@ def chat():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
+    print("\n" + "=" * 54)
+    print("  🚀 Chrix Persona AI Server is Live!")
+    print(f"  👉 Open in your browser: http://localhost:{port}")
+    print("=" * 54 + "\n")
     app.run(host="0.0.0.0", port=port, debug=False)
