@@ -186,8 +186,9 @@ input, textarea, button {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    object-fit: cover;
-    object-position: center 20%;
+    object-fit: contain;
+    object-position: center;
+    background: #102844;
     border: 2px solid rgba(56, 189, 248, 0.5);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -339,8 +340,9 @@ input, textarea, button {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    object-fit: cover;
-    object-position: center 20%;
+    object-fit: contain;
+    object-position: center;
+    background: #102844;
     border: 1.5px solid rgba(56, 189, 248, 0.5);
 }
 
@@ -831,8 +833,9 @@ input, textarea, button {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    object-fit: cover;
-    object-position: center 20%;
+    object-fit: contain;
+    object-position: center;
+    background: #102844;
     border: 2px solid var(--accent-cyan);
 }
 
