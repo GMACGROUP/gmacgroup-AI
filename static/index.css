@@ -440,11 +440,11 @@ input, textarea, button {
 }
 
 .message-bubble ul, .message-bubble ol {
-    margin: 0.4rem 0 0.6rem 1.2rem;
+    margin: 0.55rem 0 0.8rem 1.2rem;
 }
 
 .message-bubble li {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.45rem;
 }
 
 /* Code Formatting */

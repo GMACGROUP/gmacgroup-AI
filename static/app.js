@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         text = text
             .replace(/\s+###\s+/g, '\n\n### ')
-            .replace(/\s+\*\s+(?=[A-Z])/g, '\n- ')
+            .replace(/\s+\*\s+(?=\*\*|[A-Z])/g, '\n- ')
             .replace(/\s+\*\*(Applied Research and Policy Consulting|Institutional Capacity Building|Human Capital and Workforce Consulting|Employability Programmes|Signature Events and Workshops|Investment Facilitation and Capital Mobilisation)\*\*/g, '\n\n### $1')
             .replace(/\*{3}([^*\n]+):\*{2}/g, '- **$1:**')
             .replace(/\s+\*\*(Origins and Mission|Core Capabilities|Scale and Reach|Engagement Model)\*\*/g, '\n\n### $1');
