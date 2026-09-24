@@ -418,7 +418,18 @@ def clean_reply(text: str) -> str:
         text or "",
         flags=re.I | re.S,
     )
-    reply = re.sub(r"\s+", " ", reply).strip()
+    reply = reply.replace("\r\n", "\n").replace("\r", "\n")
+    reply = re.sub(r"[ \t]+", " ", reply)
+    reply = re.sub(r"[ \t]+###[ \t]+", "\n\n### ", reply)
+    reply = re.sub(r"[ \t]+\*[ \t]+(?=\*\*|[A-Z])", "\n- ", reply)
+    reply = re.sub(
+        r"[ \t]+\*\*(Applied Research and Policy Consulting|Institutional Capacity Building|Human Capital and Workforce Consulting|Employability Programmes|Signature Events and Workshops|Investment Facilitation and Capital Mobilisation)\*\*",
+        r"\n\n### \1",
+        reply,
+    )
+    reply = re.sub(r"\*{3}([^*\n]+):\*{2}", r"- **\1:**", reply)
+    reply = re.sub(r"[ \t]+\*\*(Origins and Mission|Core Capabilities|Scale and Reach|Engagement Model)\*\*", r"\n\n### \1", reply)
+    reply = re.sub(r"\n{3,}", "\n\n", reply).strip()
     return reply or CONTACT_FALLBACK
 
 
