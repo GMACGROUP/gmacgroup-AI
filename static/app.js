@@ -1,6 +1,6 @@
 /* ============================================================
-   CHRIX TECH AI PERSONA — CLIENT APPLICATION SCRIPT
-   Interactive AI Persona, Clean Layout, TTS Speech, Action Toolbar
+    GMAC GROUP COMPANY ASSISTANT — CLIENT APPLICATION SCRIPT
+    Interactive Company Assistant, Clean Layout, Copy Action Toolbar
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,11 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Opening greetings pool
     const OPENING_GREETINGS = [
-        "Hey! I'm Christian Agyapong — AI engineer, machine learning builder, and CS student at UG Legon. Ask me anything about my projects, research, stack, or how to work together!",
-        "What's up? I'm Christian's AI Persona (Chrix Tech). Curious about my BECE Kumasi record, Achimota journey, UG Legon AI track, or recent freelance work? Pick a topic!",
-        "Hello! I'm Chrix Tech. Whether you want to explore my RAG architectures, full-stack systems, educational background, or hire me for a build — I'm ready.",
-        "Hey there — welcome! I'm Christian Agyapong. Ask me about what I've built, my research in machine learning, or what drives my work in African tech.",
-        "Welcome! I'm Chrix Tech. From deep learning and stochastic optimization to real-world React & Node.js products — ask me anything!"
+        "Welcome to Gmac Group. Ask about our research, human capital, events, investment facilitation, or how to begin a conversation.",
+        "Welcome to Gmac Group. I can explain our practice areas, engagement models, team, events, and contact channels.",
+        "Gmac Group connects talent to opportunity through research, human capital, and investment facilitation. What would you like to explore?"
     ];
 
     const chosenGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
@@ -38,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isWaitingForResponse = false;
     let abortController = new AbortController();
     let toastTimeout = null;
-    let activeSpeakerBtn = null;
 
     // Avatar path
     const AVATAR_URL = document.querySelector('.avatar-img')?.src || '/static/avatar.jpg';
@@ -136,65 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return htmlResult;
     }
 
-    // ── Text-to-Speech (TTS) ──
-    function stopCurrentSpeech() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-        if (activeSpeakerBtn) {
-            activeSpeakerBtn.classList.remove('active-speaker');
-            activeSpeakerBtn.innerHTML = `
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                </svg>
-                <span>Listen</span>
-            `;
-            activeSpeakerBtn = null;
-        }
-    }
-
-    function toggleSpeakText(text, btn) {
-        if (!('speechSynthesis' in window)) {
-            showToast("Speech synthesis not supported in this browser.");
-            return;
-        }
-
-        if (activeSpeakerBtn === btn) {
-            stopCurrentSpeech();
-            return;
-        }
-
-        stopCurrentSpeech();
-
-        const cleanSpeechText = text
-            .replace(/https?:\/\/\S+/g, '')
-            .replace(/[`*_#>-]/g, '')
-            .trim();
-
-        const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
-        utterance.rate = 1.05;
-        utterance.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
-        if (preferredVoice) utterance.voice = preferredVoice;
-
-        btn.classList.add('active-speaker');
-        btn.innerHTML = `
-            <span class="tts-wave-bar"></span>
-            <span class="tts-wave-bar"></span>
-            <span class="tts-wave-bar"></span>
-            <span>Playing</span>
-        `;
-        activeSpeakerBtn = btn;
-
-        utterance.onend = stopCurrentSpeech;
-        utterance.onerror = stopCurrentSpeech;
-
-        window.speechSynthesis.speak(utterance);
-    }
-
     // ── Toast Notification ──
     function showToast(message) {
         if (toastTimeout) clearTimeout(toastTimeout);
@@ -236,11 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sender === 'ai') {
             row.innerHTML = `
                 <div class="msg-avatar-col">
-                    <img src="${AVATAR_URL}" alt="Christian Agyapong" class="msg-avatar-img">
+                    <img src="${AVATAR_URL}" alt="Gmac Group" class="msg-avatar-img">
                 </div>
                 <div class="message-bubble-wrap">
                     <div class="msg-header-info">
-                        <span class="msg-sender-name">Christian Agyapong</span>
+                        <span class="msg-sender-name">Gmac Group</span>
                         <span class="msg-ai-pill">AI</span>
                         <span class="msg-time">${timeStr}</span>
                     </div>
@@ -254,13 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
                             <span>Copy</span>
-                        </button>
-                        <button class="msg-action-btn speak-msg-btn" title="Listen to response aloud">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                            </svg>
-                            <span>Listen</span>
                         </button>
                     </div>
                 </div>
@@ -284,11 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     }, 1800);
                 });
-            });
-
-            const speakBtn = row.querySelector('.speak-msg-btn');
-            speakBtn.addEventListener('click', () => {
-                toggleSpeakText(text, speakBtn);
             });
 
         } else {
@@ -334,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearBtn.addEventListener('click', () => {
         const resetGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
         chatHistory = [["Hi", resetGreeting]];
-        stopCurrentSpeech();
         chatMessages.innerHTML = '';
         addMessageToUI('ai', resetGreeting);
         showToast("Conversation cleared");
@@ -367,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         row.innerHTML = `
             <div class="msg-avatar-col">
-                <img src="${AVATAR_URL}" alt="Christian Agyapong" class="msg-avatar-img">
+                <img src="${AVATAR_URL}" alt="Gmac Group" class="msg-avatar-img">
             </div>
             <div class="message-bubble-wrap">
                 <div class="typing-bubble">

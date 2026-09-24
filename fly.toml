@@ -1,4 +1,4 @@
-app = "chrix-persona"
+app = "gmac-group-assistant"
 primary_region = "jnb"   # Johannesburg — closest to Ghana
 
 [build]

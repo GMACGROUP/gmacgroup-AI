@@ -7,10 +7,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Chat with Chrix Tech — Christian Agyapong's AI Persona. Explore projects, machine learning research, background, and skills.">
-    <meta name="author" content="Christian Agyapong">
+    <meta name="description" content="Ask Gmac Group about its research, human capital, events, and investment facilitation work.">
+    <meta name="author" content="Gmac Group">
 
-    <title>Chrix Tech | AI Persona</title>
+    <title>Gmac Group | Company Assistant</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
@@ -38,17 +38,17 @@
             <header class="chat-header">
                 <div class="profile-info" id="header-profile-info" role="button" tabindex="0" title="Click to view full bio & experience">
                     <div class="avatar-container">
-                        <img src="{{ url_for('static', filename='avatar.jpg') }}"
-                             alt="Christian Agyapong"
+                            <img src="{{ url_for('static', filename='avatar.jpg') }}"
+                                alt="Gmac Group"
                              class="avatar-img">
                         <span class="status-dot" title="Online" aria-label="Online"></span>
                     </div>
                     <div class="user-details">
                         <div class="user-name-row">
-                            <h1 class="user-name">Christian Agyapong</h1>
+                            <h1 class="user-name">Gmac Group</h1>
                             <span class="ai-badge">AI</span>
                         </div>
-                        <p class="user-role">Computer Science &amp; AI/ML Specialist <span class="status-text">• Active</span></p>
+                        <p class="user-role">Research, Human Capital &amp; Investment <span class="status-text">• Active</span></p>
                     </div>
                 </div>
 
@@ -89,22 +89,25 @@
                 <div class="suggestions-container">
                     <div class="suggestions" id="suggestions" role="list" aria-label="Suggested prompts">
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">💼</span> What is your professional experience?
+                            <span class="chip-icon">◈</span> What services does Gmac Group offer?
                         </button>
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">🤖</span> Tell me about your AI &amp; RAG work
+                            <span class="chip-icon">◌</span> How can an institution work with Gmac Group?
                         </button>
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">🏥</span> What was your research at DISAL?
+                            <span class="chip-icon">◎</span> What research services are available?
                         </button>
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">🎓</span> Walk me through your education
+                            <span class="chip-icon">▦</span> Tell me about the team
                         </button>
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">🚀</span> What projects have you built?
+                            <span class="chip-icon">↗</span> What events does Gmac Group run?
                         </button>
                         <button class="suggestion-chip" role="listitem">
-                            <span class="chip-icon">⚡</span> What is your tech stack?
+                            <span class="chip-icon">◇</span> How do I contact Gmac Group?
+                        </button>
+                        <button class="suggestion-chip" role="listitem">
+                            <span class="chip-icon">@</span> Where can I find Gmac Group online?
                         </button>
                     </div>
                 </div>
@@ -112,10 +115,10 @@
                 <!-- Input Form -->
                 <form id="chat-form" class="input-form" autocomplete="off" role="search" aria-label="Send message">
                     <div class="glass-input-bar">
-                        <input
+                            <input
                             type="text"
                             id="message-input"
-                            placeholder="Ask Chrix about his experience, AI models, projects, or background..."
+                            placeholder="Ask Gmac Group about services, events, research, or partnerships..."
                             autocomplete="off"
                             autocorrect="off"
                             spellcheck="true"
@@ -134,14 +137,14 @@
                     </div>
                 </form>
                 <div class="input-footer-hint">
-                    <span>Chrix Persona AI Engine</span>
+                    <span>Gmac Group Company Assistant</span>
                     <span class="hint-dot">•</span>
                     <span>Press <kbd>Enter</kbd> to send</span>
                 </div>
             </div>
         </div>
 
-        <!-- Bio & Experience Modal -->
+        <!-- Company profile modal -->
         <div id="bio-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div class="modal-card">
                 <button id="modal-close-btn" class="modal-close-btn" aria-label="Close modal">
@@ -153,14 +156,14 @@
 
                 <div class="modal-header-section">
                     <div class="modal-avatar-wrapper">
-                        <img src="{{ url_for('static', filename='avatar.jpg') }}" alt="Christian Agyapong" class="modal-avatar">
+                        <img src="{{ url_for('static', filename='avatar.jpg') }}" alt="Gmac Group" class="modal-avatar">
                     </div>
                     <div class="modal-name-group">
-                        <h3 id="modal-title" class="modal-name">Christian Agyapong</h3>
-                        <p class="modal-handle">@Chrix Tech • AI &amp; Software Engineer</p>
+                        <h3 id="modal-title" class="modal-name">Gmac Group</h3>
+                        <p class="modal-handle">Connecting talent to opportunity</p>
                         <div class="modal-location-tag">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            Accra Newtown, Ghana
+                            West Africa and beyond
                         </div>
                     </div>
                 </div>
@@ -169,102 +172,98 @@
                     <div class="modal-section-block">
                         <h4 class="section-label">Summary</h4>
                         <p class="section-text">
-                            AI Engineer, Full-Stack Developer, and researcher studying Computer Science (ML &amp; AI Engineering track) at the University of Ghana, Legon. Specializing in Retrieval-Augmented Generation (RAG), Deep Learning, Computer Vision, and scalable cloud solutions designed for real-world impact across Africa.
+                            Gmac Group is a research and advisory firm that builds human capital, produces decision-ready evidence, and connects investors to investable projects across Africa.
                         </p>
                     </div>
 
                     <!-- Work Experience -->
                     <div class="modal-section-block">
-                        <h4 class="section-label">Professional Experience</h4>
+                        <h4 class="section-label">Practice Areas</h4>
                         <ul class="timeline-list">
                             <li>
-                                <strong>AI Engineer — ScaleUpBuild</strong>
-                                <span>Built business automation and RAG systems for intelligent document querying and customer support LLMs.</span>
+                                <strong>Applied Research and Policy Consulting</strong>
+                                <span>Baseline studies, evaluations, labour-market assessments, diagnostics, policy briefs, and feasibility work.</span>
                             </li>
                             <li>
-                                <strong>Machine Learning Intern — DISAL (Digital Health Solutions)</strong>
-                                <span>Healthcare AI research using MedGemma for skin disease detection on African skin tones; curated equitable datasets.</span>
+                                <strong>Institutional Capacity Building</strong>
+                                <span>Research methods training, programme design, monitoring and evaluation systems, and capability transfer.</span>
                             </li>
                             <li>
-                                <strong>Full Stack Developer — DigitalWave Technologies</strong>
-                                <span>Built full-stack web applications, secure authentication, database schemas, and REST APIs from scratch.</span>
+                                <strong>Human Capital and Workforce Consulting</strong>
+                                <span>Graduate recruitment, internship pipelines, talent assessment, employability audits, and market-entry talent strategy.</span>
                             </li>
                             <li>
-                                <strong>UI/UX Designer &amp; QA Tester — King Of Glory Chapel</strong>
-                                <span>Designed church management system UI, user testing sessions, and responsive component design systems.</span>
+                                <strong>Employability, Events, and Investment</strong>
+                                <span>Career programmes, signature events, workshops, screened deal flow, investment readiness, and investor matching.</span>
                             </li>
                         </ul>
                     </div>
 
                     <!-- Key Projects -->
                     <div class="modal-section-block">
-                        <h4 class="section-label">Featured Projects</h4>
+                        <h4 class="section-label">Featured Programmes and Events</h4>
                         <ul class="timeline-list">
                             <li>
-                                <strong>AI WhatsApp Business Assistant</strong>
-                                <span>RAG system with semantic retrieval, memory, LangGraph, vector DB, and PostgreSQL.</span>
+                                <strong>Leadership 2050 Conference</strong>
+                                <span>Annual multi-day hybrid convening on leadership, policy, and the future of Africa.</span>
                             </li>
                             <li>
-                                <strong>African Skin Disease Detection System</strong>
-                                <span>Computer vision model using MedGemma to diagnose skin conditions on darker skin tones.</span>
+                                <strong>Gmac Quarterly Investment Pitch Series</strong>
+                                <span>Quarterly curated pitch room for investors, funds, and vetted founders.</span>
                             </li>
                             <li>
-                                <strong>TweetEval NLP Moderation Model</strong>
-                                <span>3-class text classification (safe / neutral / offensive) using Hugging Face Transformers.</span>
+                                <strong>Research and Analysis Series</strong>
+                                <span>Research methods, certification, AI for research, and emerging-markets programming.</span>
                             </li>
                             <li>
-                                <strong>Christian.dev Portfolio Platform</strong>
-                                <span>Personal developer portfolio live at <a href="https://christiandetails.vercel.app/" target="_blank" rel="noopener" style="color:#38bdf8;">christiandetails.vercel.app</a>.</span>
+                                <strong>Employability Series</strong>
+                                <span>Career awareness, personal branding, job-market workshops, and structured routes from application to offer.</span>
                             </li>
                         </ul>
                     </div>
 
                     <!-- Academic Journey -->
                     <div class="modal-section-block">
-                        <h4 class="section-label">Education</h4>
+                        <h4 class="section-label">Who We Serve</h4>
                         <ul class="timeline-list">
                             <li>
-                                <strong>University of Ghana, Legon</strong> (Expected Oct 2027)
-                                <span>B.Sc. Computer Science • Machine Learning &amp; AI Track</span>
+                                <strong>Institutions</strong>
+                                <span>Development agencies, companies, investors, ministries, universities, NGOs, and foundations.</span>
                             </li>
                             <li>
-                                <strong>Achimota School</strong> (2021 – 2023)
-                                <span>General Arts (Elective Math, Economics, Geography, Government)</span>
+                                <strong>Individuals</strong>
+                                <span>Graduates, young professionals, researchers, analysts, senior leaders, and founders.</span>
                             </li>
                             <li>
-                                <strong>Edwinase Ejisu Basic School</strong> (2020)
-                                <span>Overall Best BECE Student in Kumasi</span>
+                                <strong>Priority sectors</strong>
+                                <span>Development finance, financial services, telecommunications, higher education, government, investment, and NGOs.</span>
                             </li>
                         </ul>
                     </div>
 
                     <!-- Core Stack -->
                     <div class="modal-section-block">
-                        <h4 class="section-label">Core Tech Stack</h4>
+                        <h4 class="section-label">Engagement Models</h4>
                         <div class="tech-chips-grid">
-                            <span class="tech-chip">Python</span>
-                            <span class="tech-chip">PyTorch / TensorFlow</span>
-                            <span class="tech-chip">LangChain &amp; LangGraph</span>
-                            <span class="tech-chip">RAG &amp; Vector DBs</span>
-                            <span class="tech-chip">JavaScript / TypeScript</span>
-                            <span class="tech-chip">React &amp; Next.js</span>
-                            <span class="tech-chip">Node.js &amp; FastAPI</span>
-                            <span class="tech-chip">PostgreSQL &amp; MongoDB</span>
-                            <span class="tech-chip">Docker &amp; Cloud</span>
+                            <span class="tech-chip">Project engagements</span>
+                            <span class="tech-chip">Framework agreements</span>
+                            <span class="tech-chip">Capacity building</span>
+                            <span class="tech-chip">Event partnerships</span>
+                            <span class="tech-chip">Advisory retainers</span>
                         </div>
                     </div>
 
                     <!-- Connect -->
                     <div class="modal-section-block">
-                        <h4 class="section-label">Connect &amp; Contact</h4>
+                        <h4 class="section-label">Connect with Gmac Group</h4>
                         <div class="social-links-row">
-                            <a href="mailto:christianagyapong2023@email.com" class="social-link-btn" target="_blank" rel="noopener noreferrer">
+                            <a href="mailto:info@gmac-group.com" class="social-link-btn" target="_blank" rel="noopener noreferrer">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                <span>Email Me</span>
+                                <span>Email Gmac Group</span>
                             </a>
-                            <a href="https://github.com/ChristianAgyapong" class="social-link-btn" target="_blank" rel="noopener noreferrer">
+                            <a href="https://gmac-group.com" class="social-link-btn" target="_blank" rel="noopener noreferrer">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                                <span>GitHub</span>
+                                <span>Website</span>
                             </a>
                         </div>
                     </div>

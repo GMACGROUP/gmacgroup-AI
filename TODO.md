@@ -1,22 +1,17 @@
-# TODO — Chrix Tech Persona AI
+# Gmac Group Company Assistant TODO
 
 ## Completed
-- [x] Reduce LLM verbosity by lowering `max_tokens`.
-- [x] Harden `clean_reply()` to remove `<think>` blocks (including truncated cases).
-- [x] Enforce a strict 1–5 sentence output limit in `clean_reply()`.
-- [x] Update `SYSTEM_INSTRUCTIONS` to explicitly forbid emitting reasoning/meta blocks.
-- [x] Validate syntax via `python -m py_compile app.py`.
-- [x] Add deterministic portfolio + GitHub links to the knowledge base (BM25) in `app.py`.
-- [x] Make greeting-only messages short and prevent long re-intros.
-- [x] Update the initial UI greeting to be short (update `templates/index.html` + `static/app.js`).
-- [x] Anti-repetition for greeting/general replies (avoid repeating last AI reply; basic similarity checks).
+
+- [x] Replace the personal persona backend with company-only retrieval.
+- [x] Add the Gmac Group Company Profile 2026 knowledge base.
+- [x] Add company grounding and unavailable-fact rules.
+- [x] Update the browser experience and deployment metadata for Gmac Group.
+- [x] Include the knowledge base in the Docker image.
 
 ## Next
-- [x] Expand greeting variation pool (more than 3 templates).
-- [x] Suggestion anti-repetition (don’t keep showing the same chips after small changes).
 
-- [ ] Quick chat tests after edits:
-  - ask: "hey" repeatedly
-  - ask: "Are you available for freelance?"
-  - ask: "What projects"
-
+- [ ] Add automated API tests for services, pricing, contact, and investment questions.
+- [ ] Add source citations to each response.
+- [ ] Add authenticated document ingestion for future company knowledge updates.
+- [ ] Replace in-memory BM25 with persistent vector retrieval before multi-company use.
+- [ ] Add authentication, tenant isolation, and document permissions before serving multiple companies.

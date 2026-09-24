@@ -7,6 +7,7 @@ __pycache__/
 venv/
 .venv/
 chrix_db_v4/
+and/
 notebooks/
 .git/
 .gitignore

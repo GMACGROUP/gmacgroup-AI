@@ -1,5 +1,5 @@
 ---
-title: Chrix Persona
+title: Gmac Group Company Assistant
 emoji: 🚀
 colorFrom: blue
 colorTo: green
@@ -8,27 +8,26 @@ pinned: false
 app_port: 7860
 ---
 
-# Chrix Tech — Persona AI v4
+# Gmac Group Company Assistant
 
-A RAG-powered personal AI chatbot that speaks as Christian Agyapong (Chrix Tech).
-Built with LangChain, Groq (Qwen3.6 27B), ChromaDB, and Gradio.
+A RAG-powered company information assistant for Gmac Group.
+It answers from the Gmac Group Company Profile 2026 using LangChain, Groq, and BM25 retrieval.
 
 ---
 
 ## Project Structure
 
 ```
-chrix-persona/
+gmac-group-assistant/
 ├── app.py               ← Main entry point (run this to launch)
+├── gmac_group_knowledge_base.txt ← Company facts used for retrieval
 ├── requirements.txt     ← Python dependencies
 ├── .env.example         ← Environment variable template
 ├── Dockerfile           ← For Fly.io / Docker deployment
 ├── fly.toml             ← Fly.io config
 ├── .dockerignore        ← Docker build exclusions
 ├── .gitignore           ← Git exclusions
-├── notebooks/
-│   └── persona.ipynb    ← Original development notebook
-└── chrix_db_v4/         ← ChromaDB vector store (auto-generated on first run)
+└── static/ and templates/ ← Browser client
 ```
 
 ---
@@ -63,7 +62,7 @@ python app.py
    - `GROQ_API_KEY` = your Groq key
 5. The Space will auto-build and launch.
 
-> The `chrix_db_v4/` folder will be regenerated automatically on first startup — no need to upload it.
+> The company profile is loaded from `gmac_group_knowledge_base.txt` at startup.
 
 ---
 
@@ -92,7 +91,7 @@ fly deploy
 
 ## Notes
 
-- The ChromaDB vector store (`chrix_db_v4/`) is built from the bio on first startup.
-  It is excluded from Git via `.gitignore` and will regenerate automatically.
-- The model used is `qwen/qwen3.6-27b` via Groq — fast and free-tier friendly.
+- The company knowledge base is loaded from `gmac_group_knowledge_base.txt` at startup.
+- Answers must stay within the company profile. Published pricing is expressed as bands only.
+- The default model is `qwen/qwen3.8-27b` via Groq. Override it with `GROQ_MODEL` when needed.
 - All Groq API calls are made server-side; the key is never exposed to the browser.
