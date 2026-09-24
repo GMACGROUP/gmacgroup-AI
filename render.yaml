@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: gmac-group-assistant
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: COMPANY_WEBSITE_URL
+        value: https://gmacgroup.vercel.app/
+      - key: WEBSITE_RAG_ENABLED
+        value: "true"

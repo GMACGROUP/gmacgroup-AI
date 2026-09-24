@@ -1,13 +1,3 @@
----
-title: Gmac Group Company Assistant
-emoji: 🚀
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
-app_port: 7860
----
-
 # Gmac Group Company Assistant
 
 A RAG-powered company information assistant for Gmac Group.
@@ -23,8 +13,8 @@ gmac-group-assistant/
 ├── gmac_group_knowledge_base.txt ← Company facts used for retrieval
 ├── requirements.txt     ← Python dependencies
 ├── .env.example         ← Environment variable template
-├── Dockerfile           ← For Fly.io / Docker deployment
-├── fly.toml             ← Fly.io config
+├── Dockerfile           ← Render container definition
+├── render.yaml          ← Render service configuration
 ├── .dockerignore        ← Docker build exclusions
 ├── .gitignore           ← Git exclusions
 └── static/ and templates/ ← Browser client
@@ -53,30 +43,15 @@ python app.py
 
 ---
 
-## Deploy to Hugging Face Spaces (easiest)
+## Deploy to Render
 
-1. Create a new Space at https://huggingface.co/new-space
-2. Choose **Gradio** as the SDK
-3. Upload all files in this folder (except `notebooks/` if you want)
-4. Go to **Settings → Repository secrets** and add:
-   - `GROQ_API_KEY` = your Groq key
-5. The Space will auto-build and launch.
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint** and select the repository.
+3. Render will detect `render.yaml` and create the Docker web service.
+4. Add `GROQ_API_KEY` under the service environment variables.
+5. Deploy the service. Render supplies the `PORT` variable automatically.
 
-> The company profile is loaded from `gmac_group_knowledge_base.txt` at startup.
-
----
-
-## Deploy to Fly.io
-
-```bash
-# Install flyctl if not already installed
-# https://fly.io/docs/hands-on/install-flyctl/
-
-fly auth login
-fly launch          # follow prompts; use fly.toml config provided
-fly secrets set GROQ_API_KEY=your_key_here
-fly deploy
-```
+The health check is available at `/health`. The company profile is loaded from `gmac_group_knowledge_base.txt` at startup.
 
 ---
 
@@ -85,7 +60,7 @@ fly deploy
 | Variable       | Required | Description              |
 |----------------|----------|--------------------------|
 | `GROQ_API_KEY` | Yes      | Your Groq API key        |
-| `PORT`         | No       | Server port (default 7860) |
+| `PORT`         | No       | Supplied automatically by Render; defaults to 7860 locally |
 
 ---
 

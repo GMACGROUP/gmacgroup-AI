@@ -25,9 +25,9 @@ The assistant speaks on behalf of Gmac Group, not a private individual. It uses 
 - Nigeria: +234 814 498 8398
 - Website: gmac-group.com
 
-## Deployment
+## Render Deployment
 
-`Dockerfile` copies the company knowledge file into the image. `GROQ_API_KEY` is required at runtime, and `PORT` defaults to `7860`.
+Render builds the Docker image defined by `Dockerfile` and uses `render.yaml` to configure the web service. `GROQ_API_KEY` is required at runtime, and Render supplies `PORT` automatically. Local runs default to port `7860`.
 
 The `GET /health` endpoint reports the service status, company name, knowledge source, and number of loaded retrieval chunks.
 
