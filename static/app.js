@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let toastTimeout = null;
 
     // Avatar path
-    const AVATAR_URL = document.querySelector('.avatar-img')?.src || '/static/avatar.jpg';
+    const AVATAR_URL = document.querySelector('.avatar-img')?.src || '/static/avatar.png';
 
     // ── Helper: Format Time ──
     function getTimeLabel() {
