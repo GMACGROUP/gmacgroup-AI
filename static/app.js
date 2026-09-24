@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return `__CODE_BLOCK_${index}__`;
         });
 
+        text = text
+            .replace(/\*{3}([^*\n]+):\*{2}/g, '- **$1:**')
+            .replace(/\s+\*\*(Origins and Mission|Core Capabilities|Scale and Reach|Engagement Model)\*\*/g, '\n\n### $1');
+
         text = escapeHTML(text);
 
         // Inline code `code`
@@ -91,28 +95,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Lists & paragraphs
         const lines = text.split('\n');
-        let inList = false;
+        let listType = null;
         let formattedLines = [];
 
         for (let line of lines) {
             const trimmed = line.trim();
-            if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
-                if (!inList) {
-                    formattedLines.push('<ul>');
-                    inList = true;
+            const isOrdered = /^\d+\.\s+/.test(trimmed);
+            const isUnordered = /^(?:- |\* |• )/.test(trimmed);
+
+            if (trimmed.startsWith('### ')) {
+                if (listType) {
+                    formattedLines.push(`</${listType}>`);
+                    listType = null;
                 }
-                formattedLines.push(`<li>${trimmed.substring(2)}</li>`);
+                formattedLines.push(`<h3>${trimmed.substring(4)}</h3>`);
+            } else if (isOrdered || isUnordered) {
+                const nextListType = isOrdered ? 'ol' : 'ul';
+                if (listType !== nextListType) {
+                    if (listType) formattedLines.push(`</${listType}>`);
+                    formattedLines.push(`<${nextListType}>`);
+                    listType = nextListType;
+                }
+                const itemText = isOrdered
+                    ? trimmed.replace(/^\d+\.\s+/, '')
+                    : trimmed.substring(2);
+                formattedLines.push(`<li>${itemText}</li>`);
             } else {
-                if (inList) {
-                    formattedLines.push('</ul>');
-                    inList = false;
+                if (listType) {
+                    formattedLines.push(`</${listType}>`);
+                    listType = null;
                 }
                 if (trimmed.length > 0) {
                     formattedLines.push(`<p>${line}</p>`);
                 }
             }
         }
-        if (inList) formattedLines.push('</ul>');
+        if (listType) formattedLines.push(`</${listType}>`);
         let htmlResult = formattedLines.join('');
 
         // Re-inject code blocks

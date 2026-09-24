@@ -416,6 +416,18 @@ input, textarea, button {
     margin-bottom: 0;
 }
 
+.message-bubble h3 {
+    margin: 0.9rem 0 0.35rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.35;
+    color: #ffffff;
+}
+
+.message-bubble h3:first-child {
+    margin-top: 0;
+}
+
 .message-bubble strong {
     font-weight: 600;
     color: #ffffff;
@@ -1012,6 +1024,16 @@ input, textarea, button {
     .message-bubble {
         padding: 10px 13px;
         font-size: 0.86rem;
+    }
+
+    .message-bubble h3 {
+        font-size: 0.92rem;
+        margin-top: 0.75rem;
+    }
+
+    .message-bubble ul, .message-bubble ol {
+        margin-left: 0.9rem;
+        padding-left: 0.9rem;
     }
 
     .chat-input-area {
