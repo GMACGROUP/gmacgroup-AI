@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -19,6 +20,7 @@ load_dotenv(override=True)
 BASE_DIR = Path(__file__).resolve().parent
 KNOWLEDGE_BASE_PATH = BASE_DIR / "gmac_group_knowledge_base.txt"
 MEMORY_FILE_PATH = BASE_DIR / "company_memory.jsonl"
+UNANSWERED_LOG_PATH = BASE_DIR / "unanswered_questions.jsonl"
 COMPANY_WEBSITE_URL = os.environ.get("COMPANY_WEBSITE_URL", "https://gmacgroup.vercel.app/")
 ALLOWED_WEBSITE_HOSTS = {"gmacgroup.vercel.app", "gmac-group.com", "www.gmac-group.com"}
 WEBSITE_PATHS = (
@@ -41,14 +43,21 @@ PRIVATE_DATA_PATTERNS = (
     (re.compile(r"\b(?:gsk_|sk-|Bearer\s+)[A-Za-z0-9._-]+", re.I), "[private credential removed]"),
 )
 CONTACT_FALLBACK = (
-    "That information is not available in the Gmac Group company profile. "
-    "Please contact info@gmac-group.com for the latest details."
+    "Gmac Group does not publish that specific detail publicly, but we can address it directly. "
+    "Reach us at info@gmac-group.com, +233 20 215 4828 (Ghana), or +234 814 498 8398 (Nigeria) "
+    "and we will get back to you promptly."
 )
+
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "")
 
 COMPANY_SYSTEM_PROMPT = """
 You are the official Gmac Group company information assistant.
 
-Use the RELEVANT COMPANY FACTS for every claim about Gmac Group. Speak on behalf of Gmac Group using "Gmac Group" or "we"; never present yourself as a private individual and never mention a former personal persona.
+Your knowledge comes from two sources that are always provided to you:
+1. The Gmac Group Company Profile 2026 — a structured internal reference document.
+2. Live content crawled from the Gmac Group website (gmac-group.com) at the time of this session — this gives you the most current publicly-visible information.
+
+When both sources are available, prefer the live website content for current programme listings, event dates, and pages shown online, and prefer the company profile for policies, pricing bands, team structure, and engagement models. You do not need to tell the user which source you are using; simply answer as Gmac Group.
 
 Grounding rules:
 - Do not invent facts, prices, clients, case studies, registration numbers, team details, investment returns, or services.
@@ -307,12 +316,12 @@ def build_query(question: str) -> str:
     normalized = question.lower()
     expansions = {
         "service": "practice areas applied research policy consulting capacity building human capital workforce employability events investment facilitation",
-        "research": "applied research policy consulting baseline evaluation labour market sector diagnostic feasibility methodology",
+        "research": "applied research policy consulting baseline evaluation labour market sector diagnostic feasibility methodology econometric quantitative GIZ FCDO World Bank",
         "training": "institutional capacity building research methods monitoring evaluation programme design",
         "recruit": "human capital workforce consulting graduate recruitment internship talent assessment employability audit",
         "career": "employability programmes CV LinkedIn interview coaching internship placement graduates professionals",
-        "event": "signature events workshops Leadership 2050 Business Entrepreneurship Investment Pitch Series sponsorship",
-        "invest": "investment facilitation capital mobilisation screened deal flow investment readiness due diligence investor matching focus markets",
+        "event": "signature events workshops Leadership 2050 Business Entrepreneurship Investment Pitch Series sponsorship programmes calendar",
+        "invest": "investment facilitation capital mobilisation screened deal flow investment readiness due diligence investor matching focus markets agribusiness energy infrastructure",
         "price": "pricing engagement band entry standard premium quote scope",
         "cost": "pricing engagement band entry standard premium quote scope",
         "contact": "contact email telephone Ghana Nigeria website scoping conversation",
@@ -323,11 +332,28 @@ def build_query(question: str) -> str:
         "partner": "partners Tarragon Edge LevelUp Africa",
         "website": "live website current pages programmes services contact Gmac Group",
         "current": "live website current programmes services events opportunities Gmac Group",
-        "programme": "development programmes Career Readiness Lab Applied Research Analytical Methods Executive Talent Strategic HR Lab",
+        "programme": "development programmes Leadership 2050 Personal Brand Employability Series Research Analysis Pitch Series masterclass workshop",
         "strategy": "business strategy institutional capacity workforce research investment employability programme design",
-        "how can": "general professional guidance business research workforce capacity building investment readiness",
+        "how can": "general professional guidance business research workforce capacity building investment readiness scoping conversation",
         "improve": "general professional guidance programme design monitoring evaluation workforce research investment readiness",
         "prepare": "general professional guidance research protocol investment readiness business plan due diligence workforce planning",
+        "faq": "frequently asked questions recruitment agency individuals diaspora consultancy difference",
+        "start": "engagement process onboarding scoping conversation first step how to begin",
+        "begin": "engagement process onboarding scoping conversation first step how to begin",
+        "how do": "engagement process onboarding scoping conversation next steps deliverables",
+        "sector": "sectors industries financial services telecoms NGO government university development finance agribusiness energy",
+        "industry": "sectors industries financial services telecoms NGO government university development finance agribusiness energy",
+        "value": "culture values principles evidence specialists scope Africa handover warm rigorous",
+        "culture": "culture values principles evidence specialists scope Africa handover warm rigorous",
+        "principle": "culture values principles evidence specialists scope Africa handover warm rigorous",
+        "different": "differentiators unique value proposition doctoral research Africa-based competitive cost",
+        "unique": "differentiators unique value proposition doctoral research Africa-based competitive cost",
+        "individual": "individuals graduates young professionals employability programmes CV coaching internship",
+        "graduate": "employability programmes CV LinkedIn coaching internship placement graduates professionals recruitment",
+        "fund": "investment facilitation capital mobilisation fund manager custodian deal flow investor matching",
+        "capital": "investment facilitation capital mobilisation fund manager custodian deal flow investor matching",
+        "remote": "remote by design ten countries virtual delivery international clients diaspora",
+        "diaspora": "diaspora African diaspora international virtual programmes investors",
     }
     matched_terms = [terms for keyword, terms in expansions.items() if keyword in normalized]
     return f"Gmac Group Company Profile 2026 {' '.join(matched_terms)} {question}".strip()
@@ -335,15 +361,15 @@ def build_query(question: str) -> str:
 
 SECTION_HINTS = {
     "service": ("PRACTICE AREAS", "APPLIED RESEARCH", "INSTITUTIONAL CAPACITY", "HUMAN CAPITAL", "EMPLOYABILITY"),
-    "research": ("APPLIED RESEARCH", "INSTITUTIONAL CAPACITY"),
+    "research": ("APPLIED RESEARCH", "INSTITUTIONAL CAPACITY", "Research Practice Detail"),
     "training": ("INSTITUTIONAL CAPACITY", "EMPLOYABILITY"),
-    "recruit": ("HUMAN CAPITAL",),
-    "career": ("EMPLOYABILITY",),
-    "event": ("EVENTS AND WORKSHOPS",),
-    "invest": ("INVESTMENT FACILITATION",),
-    "capital": ("INVESTMENT FACILITATION",),
-    "fund": ("INVESTMENT FACILITATION",),
-    "pitch": ("EVENTS AND WORKSHOPS", "INVESTMENT FACILITATION"),
+    "recruit": ("HUMAN CAPITAL", "Human Capital and Employability Detail"),
+    "career": ("EMPLOYABILITY", "Human Capital and Employability Detail"),
+    "event": ("EVENTS AND WORKSHOPS", "Programmes Detail"),
+    "invest": ("INVESTMENT FACILITATION", "Investment Facilitation Detail"),
+    "capital": ("INVESTMENT FACILITATION", "Investment Facilitation Detail"),
+    "fund": ("INVESTMENT FACILITATION", "Investment Facilitation Detail"),
+    "pitch": ("EVENTS AND WORKSHOPS", "INVESTMENT FACILITATION", "Programmes Detail"),
     "price": ("ENGAGEMENT MODELS AND PRICING",),
     "cost": ("ENGAGEMENT MODELS AND PRICING",),
     "pricing": ("ENGAGEMENT MODELS AND PRICING",),
@@ -353,9 +379,24 @@ SECTION_HINTS = {
     "staff": ("TEAM", "ROSTER", "ORGANISATION"),
     "employee": ("TEAM", "ROSTER", "ORGANISATION"),
     "partner": ("PARTNERS",),
-    "programme": ("PROGRAMMES",),
+    "programme": ("PROGRAMMES", "Programmes Detail"),
     "website": ("PROGRAMMES", "SERVICES", "ABOUT", "CONTACT"),
     "current": ("PROGRAMMES", "SERVICES", "OPPORTUNITIES", "INSIGHTS"),
+    "faq": ("FAQs",),
+    "how do": ("Engagement Process", "FAQs"),
+    "start": ("Engagement Process",),
+    "begin": ("Engagement Process",),
+    "sector": ("Sectors Served",),
+    "industry": ("Sectors Served",),
+    "value": ("Values and Culture",),
+    "culture": ("Values and Culture",),
+    "principle": ("Values and Culture",),
+    "different": ("DIFFERENTIATORS", "FAQs"),
+    "unique": ("DIFFERENTIATORS", "FAQs"),
+    "individual": ("Human Capital and Employability Detail", "FAQs"),
+    "graduate": ("Human Capital and Employability Detail", "EMPLOYABILITY"),
+    "diaspora": ("FAQs", "COMPANY OVERVIEW"),
+    "remote": ("Values and Culture", "COMPANY OVERVIEW", "FAQs"),
 }
 
 
@@ -575,6 +616,18 @@ def is_social_question(question: str) -> bool:
     )
 
 
+def _split_context_by_source(facts: list) -> tuple[str, str]:
+    """Split retrieved documents into live-website chunks and profile chunks."""
+    website_parts = []
+    profile_parts = []
+    for doc in facts:
+        if doc.metadata.get("source") == "Gmac Group live website":
+            website_parts.append(doc.page_content)
+        else:
+            profile_parts.append(doc.page_content)
+    return "\n\n".join(website_parts), "\n\n".join(profile_parts)
+
+
 def build_company_response(question: str, history: list):
     question = sanitize_user_text(question)
     if is_social_question(question):
@@ -585,29 +638,45 @@ def build_company_response(question: str, history: list):
         return grounded_local_answer(question) or CONTACT_FALLBACK, fallback_suggestions(question)
 
     facts = retrieve_company_facts(question)
-    context = "\n\n".join(document.page_content for document in facts)[:7000]
+    website_context, profile_context = _split_context_by_source(facts)
+
+    # Build a clearly labelled context block so the LLM knows what is live vs static
+    context_sections = []
+    if website_context:
+        context_sections.append(
+            f"LIVE WEBSITE CONTENT (crawled from gmac-group.com — most current publicly visible information):\n{website_context[:3500]}"
+        )
+    if profile_context:
+        context_sections.append(
+            f"COMPANY PROFILE 2026 (structured internal reference — authoritative for policies, pricing, and team):\n{profile_context[:3500]}"
+        )
+    if not context_sections:
+        context_sections.append("No specific company facts were retrieved for this question.")
+
+    context = "\n\n".join(context_sections)
+
     prompt = (
-        "SOURCE: Gmac Group Company Profile 2026\n"
-        "RELEVANT COMPANY FACTS:\n"
         f"{context}\n\n"
         "RECENT CONVERSATION:\n"
         f"{format_history(history)}\n\n"
         f"CURRENT QUESTION: {question}\n\n"
-        "Answer the current question using only the relevant company facts."
+        "Answer the current question using the company facts above. "
+        "Where live website content and the company profile both apply, prefer the live website content for current listings and pages, "
+        "and prefer the company profile for policies, pricing, and team structure."
     )
 
     if APP_COMPANY_MEMORIES:
         memory_block = "\n".join(f"- {fact}" for fact in APP_COMPANY_MEMORIES)
         prompt = (
-            "SOURCE: Gmac Group Company Profile 2026\n"
-            "ACCEPTED COMPANY MEMORY NOTES:\n"
+            "ACCEPTED COMPANY MEMORY NOTES (updates confirmed by the admin):\n"
             f"{memory_block}\n\n"
-            "RELEVANT COMPANY FACTS:\n"
             f"{context}\n\n"
             "RECENT CONVERSATION:\n"
             f"{format_history(history)}\n\n"
             f"CURRENT QUESTION: {question}\n\n"
-            "Answer the current question using the company facts and the accepted memory notes, while keeping the assistant grounded in public Gmac Group information."
+            "Answer using the company facts and accepted memory notes, keeping all answers grounded in public Gmac Group information. "
+            "Where live website content and the company profile both apply, prefer the live website content for current listings and pages, "
+            "and prefer the company profile for policies, pricing, and team structure."
         )
 
     if llm is None:
@@ -642,6 +711,47 @@ llm = (
     if api_key
     else None
 )
+
+
+def log_unanswered(question: str, reply: str) -> None:
+    """Log questions where the AI fell back to the generic contact fallback."""
+    if not reply or CONTACT_FALLBACK[:40] not in reply:
+        return
+    try:
+        with UNANSWERED_LOG_PATH.open("a", encoding="utf-8") as log_file:
+            log_file.write(
+                json.dumps(
+                    {
+                        "question": question,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+    except OSError:
+        pass
+
+
+def refresh_company_retriever() -> dict:
+    """Re-crawl the live website and rebuild the BM25 retriever in-place."""
+    global company_retriever
+    try:
+        new_retriever = load_company_retriever()
+        company_retriever = new_retriever
+        website_chunks = sum(
+            1 for doc in company_retriever.docs
+            if doc.metadata.get("source") == "Gmac Group live website"
+        )
+        return {
+            "refreshed": True,
+            "total_chunks": len(company_retriever.docs),
+            "website_chunks": website_chunks,
+        }
+    except Exception as error:
+        return {"refreshed": False, "error": str(error)}
+
+
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
 
@@ -692,9 +802,11 @@ def health():
         "knowledge_chunks": len(company_retriever.docs),
         "memory_facts": len(APP_COMPANY_MEMORIES),
         "website_source": COMPANY_WEBSITE_URL,
+        "website_pages_crawled": list(WEBSITE_PATHS),
         "website_chunks": website_chunks,
         "website_rag_enabled": website_chunks > 0,
         "ai_configured": llm is not None,
+        "model": os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b") if llm else None,
     })
 
 
@@ -709,12 +821,76 @@ def chat():
 
     memory_fact = remember_accepted_fact(question)
     reply, suggestions = build_company_response(question, history)
+    log_unanswered(question, reply)
     payload = {"reply": reply, "suggestions": suggestions}
     if memory_fact:
         payload["memory_saved"] = True
         payload["memory_fact"] = memory_fact
         payload["reply"] = f"I’ve noted that and will keep it in the company context for future answers: {memory_fact}"
     return jsonify(payload)
+
+
+@app.route("/api/refresh", methods=["POST"])
+def refresh_website():
+    """Re-crawl the live Gmac Group website and rebuild the retrieval index.
+    Call this endpoint (POST /api/refresh) to pick up new content from gmac-group.com
+    without restarting the service.
+    """
+    result = refresh_company_retriever()
+    return jsonify(result), 200 if result.get("refreshed") else 500
+
+
+@app.route("/api/admin/add-fact", methods=["POST"])
+def admin_add_fact():
+    """Admin-only endpoint to add a new fact to company memory.
+    Requires the X-Admin-Secret header matching ADMIN_SECRET env var.
+    """
+    auth = request.headers.get("X-Admin-Secret", "")
+    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    fact = str(data.get("fact") or "").strip()
+    if len(fact) < 12:
+        return jsonify({"error": "Fact too short — must be at least 12 characters."}), 400
+    if any(fact.lower() == existing.lower() for existing in APP_COMPANY_MEMORIES):
+        return jsonify({"status": "duplicate", "message": "Fact already exists."}), 200
+    APP_COMPANY_MEMORIES.append(fact)
+    persist_accepted_company_memory(APP_COMPANY_MEMORIES)
+    return jsonify({"status": "added", "fact": fact, "total_facts": len(APP_COMPANY_MEMORIES)}), 201
+
+
+@app.route("/api/admin/facts", methods=["GET"])
+def admin_list_facts():
+    """Admin-only endpoint to view all saved memory facts.
+    Requires the X-Admin-Secret header matching ADMIN_SECRET env var.
+    """
+    auth = request.headers.get("X-Admin-Secret", "")
+    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify({"facts": APP_COMPANY_MEMORIES, "total": len(APP_COMPANY_MEMORIES)})
+
+
+@app.route("/api/admin/unanswered", methods=["GET"])
+def admin_unanswered_questions():
+    """Admin-only endpoint to review questions that triggered the contact fallback.
+    Review these weekly and add answers to gmac_group_knowledge_base.txt.
+    """
+    auth = request.headers.get("X-Admin-Secret", "")
+    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+        return jsonify({"error": "Unauthorized"}), 401
+    questions = []
+    if UNANSWERED_LOG_PATH.exists():
+        try:
+            with UNANSWERED_LOG_PATH.open("r", encoding="utf-8") as log_file:
+                for line in log_file:
+                    if line.strip():
+                        try:
+                            questions.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            continue
+        except OSError:
+            pass
+    return jsonify({"unanswered": questions, "total": len(questions)})
 
 
 if __name__ == "__main__":
