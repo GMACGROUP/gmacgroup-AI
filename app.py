@@ -1,3 +1,4 @@
+import hmac
 import json
 import os
 import re
@@ -819,7 +820,12 @@ def chat():
     if not question:
         return jsonify({"reply": "Please type a question about Gmac Group.", "suggestions": []})
 
-    memory_fact = remember_accepted_fact(question)
+    auth = request.headers.get("X-Admin-Secret", "")
+    memory_fact = (
+        remember_accepted_fact(question)
+        if ADMIN_SECRET and hmac.compare_digest(auth, ADMIN_SECRET)
+        else None
+    )
     reply, suggestions = build_company_response(question, history)
     log_unanswered(question, reply)
     payload = {"reply": reply, "suggestions": suggestions}
@@ -836,6 +842,9 @@ def refresh_website():
     Call this endpoint (POST /api/refresh) to pick up new content from gmac-group.com
     without restarting the service.
     """
+    auth = request.headers.get("X-Admin-Secret", "")
+    if not ADMIN_SECRET or not hmac.compare_digest(auth, ADMIN_SECRET):
+        return jsonify({"error": "Unauthorized"}), 401
     result = refresh_company_retriever()
     return jsonify(result), 200 if result.get("refreshed") else 500
 
@@ -846,7 +855,7 @@ def admin_add_fact():
     Requires the X-Admin-Secret header matching ADMIN_SECRET env var.
     """
     auth = request.headers.get("X-Admin-Secret", "")
-    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+    if not ADMIN_SECRET or not hmac.compare_digest(auth, ADMIN_SECRET):
         return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json(silent=True) or {}
     fact = str(data.get("fact") or "").strip()
@@ -865,7 +874,7 @@ def admin_list_facts():
     Requires the X-Admin-Secret header matching ADMIN_SECRET env var.
     """
     auth = request.headers.get("X-Admin-Secret", "")
-    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+    if not ADMIN_SECRET or not hmac.compare_digest(auth, ADMIN_SECRET):
         return jsonify({"error": "Unauthorized"}), 401
     return jsonify({"facts": APP_COMPANY_MEMORIES, "total": len(APP_COMPANY_MEMORIES)})
 
@@ -876,7 +885,7 @@ def admin_unanswered_questions():
     Review these weekly and add answers to gmac_group_knowledge_base.txt.
     """
     auth = request.headers.get("X-Admin-Secret", "")
-    if not ADMIN_SECRET or auth != ADMIN_SECRET:
+    if not ADMIN_SECRET or not hmac.compare_digest(auth, ADMIN_SECRET):
         return jsonify({"error": "Unauthorized"}), 401
     questions = []
     if UNANSWERED_LOG_PATH.exists():

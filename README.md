@@ -60,6 +60,7 @@ The health check is available at `/health`. The company profile is loaded from `
 | Variable       | Required | Description              |
 |----------------|----------|--------------------------|
 | `GROQ_API_KEY` | Yes      | Your Groq API key        |
+| `ADMIN_SECRET` | Yes for admin operations | Secret used by the protected refresh and admin endpoints |
 | `PORT`         | No       | Supplied automatically by Render; defaults to 7860 locally |
 
 ---
@@ -70,3 +71,4 @@ The health check is available at `/health`. The company profile is loaded from `
 - Answers must stay within the company profile. Published pricing is expressed as bands only.
 - The default model is `qwen/qwen3.8-27b` via Groq. Override it with `GROQ_MODEL` when needed.
 - All Groq API calls are made server-side; the key is never exposed to the browser.
+- The `POST /api/refresh` and `/api/admin/*` endpoints require the `X-Admin-Secret` header.

@@ -29,7 +29,7 @@ The assistant speaks on behalf of Gmac Group, not a private individual. It uses 
 
 Render builds the Docker image defined by `Dockerfile` and uses `render.yaml` to configure the web service. `GROQ_API_KEY` is required at runtime, and Render supplies `PORT` automatically. Local runs default to port `7860`.
 
-The `GET /health` endpoint reports the service status, company name, knowledge source, and number of loaded retrieval chunks.
+The `GET /health` endpoint reports the service status, company name, knowledge source, and number of loaded retrieval chunks. The website refresh and admin memory endpoints require `ADMIN_SECRET` in the `X-Admin-Secret` request header.
 
 Website retrieval is enabled by default for `https://gmacgroup.vercel.app/`. The approved pages are the home, about, services, programmes, opportunities, research, insights, and contact pages. Set `WEBSITE_RAG_ENABLED=false` to use only the local company profile.
 

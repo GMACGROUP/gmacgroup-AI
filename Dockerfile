@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app.py .
 COPY gmac_group_knowledge_base.txt .
+COPY company_memory.jsonl .
 COPY static/ static/
 COPY templates/ templates/
 
